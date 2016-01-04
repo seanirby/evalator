@@ -2,8 +2,8 @@
 (require 'helm-elisp)
 (require 'cl-lib)
 
-(setq helm-lambda-history '())
 (defvar helm-lambda-history '())
+(defvar helm-lambda-history-index -1)
 (defvar helm-lambda-eval-context nil) ;;stub
 (defvar helm-lambda-map
   (let ((map (make-sparse-keymap)))
@@ -27,24 +27,46 @@ if no candidates were marked."
       candidates)))
 
 (defun helm-lambda-history-push! (data)
-  (setq helm-lambda-history (cons data helm-lambda-history)))
+  (setq helm-lambda-history (cons data (subseq helm-lambda-history helm-lambda-history-index)))
+  (setq helm-lambda-history-index 0))
+
 
 (defun helm-lambda-history-pop! ()
-  (setq helm-lambda-history (cdr helm-lambda-history)))
+  (setq helm-lambda-history (cdr helm-lambda-history))
+  (let ((index (if (equal nil helm-lambda-history nil)
+		   -1
+		 (- 1 helm-lambda-history-index))))
+    (setq helm-lambda-history-index index)))
 
 (defun helm-lambda-history-clear! ()
-  (setq helm-lambda-history '()))
+  (setq helm-lambda-history '())
+  (setq helm-lambda-history-index -1))
 
 (defun helm-lambda-history-current ()
-  (car helm-lambda-history))
-
-(defun helm-lambda-history-previous ()
-  (interactive)
-  (message-box "going to previous source"))
+  (nth helm-lambda-history-index helm-lambda-history))
 
 (defun helm-lambda-history-next ()
   (interactive)
-  (message-box "going to next source"))
+  (let ((index (if (equal 0 helm-lambda-history-index)
+		   0
+		 (- helm-lambda-history-index 1))))
+    (setq helm-lambda-history-index index)
+    (helm-lambda-history-load)))
+
+(defun helm-lambda-history-previous ()
+  (interactive)
+  (let* ((last-index (- (length helm-lambda-history) 1))
+	(index (if (equal last-index helm-lambda-history-index)
+		   last-index
+		 (+ 1 helm-lambda-history-index))))
+    (setq helm-lambda-history-index index)
+    (helm-lambda-history-load)))
+
+(defun helm-lambda-history-load ()
+  (let* ((source (helm-lambda-history-current))
+	(candidates (helm-get-candidates source))
+	(f (lambda (candidates _) (helm-lambda-raw candidates nil))))
+    (helm-exit-and-execute-action (apply-partially f candidates))))
 
 (defun helm-lambda-confirm-application ()
   "Accepts results and starts a new helm-lambda for further
@@ -52,7 +74,7 @@ transformations."
   (interactive)
   (let ((source (helm-lambda-history-current))
 	(candidates (-helm-lambda-transform-candidates))
-	(f (lambda (_ candidates) (helm-lambda candidates))))
+	(f (lambda (candidates _) (helm-lambda-raw candidates t))))
     (helm-exit-and-execute-action (apply-partially f candidates))))
 
 (defun -helm-lambda-transform-candidates ()
@@ -64,10 +86,6 @@ of marked candidates.  The former is useful for candidate
 transformations.  The latter is useful for accumulating a result."
   (let ((expr (read helm-pattern))
 	(candidates (helm-get-candidates (helm-lambda-history-current))))
-    (my-sp expr)
-    (my-sp "candidates from history")
-    (my-sp candidates)
-
     ;; TODO will need fix for marked candidates
     (if (equal nil (-helm-lambda-marked-candidates))
 	(mapcar (lambda (candidate)
@@ -86,18 +104,9 @@ transformations.  The latter is useful for accumulating a result."
      (helm-get-candidates _source))))
 
 (defun -helm-lambda-apply-expression (expr x)
-  "Applies 'expr' to 'x'. Provides
-wrapper such that expression can
-include '%' symbols. '%' will
-refer to x. If 'x' is a sequence
-then elements in x can be
-referenced with %INDEX.
-
-Example:
-
-(setq exp '(cons (+ %0 %1 %2 %3) %))
-(setq x '(1 2 3 4)
-      (helm-lambda-apply-expression exp x)  => '(10 1 2 3 4)"
+  "Applies 'expr' to 'x'. Provides wrapper such that expression can
+include '%' symbols. '%' will refer to x. If 'x' is a sequence then
+elements in x can be referenced with %INDEX."
   (if (and (sequencep x) (not (stringp x)))
       (let* ((ns (number-sequence 0 (1- (length x))))
 	     (arg-names (mapcar (lambda (n) (intern (concat "%" (int-to-string n)))) ns))
@@ -115,11 +124,11 @@ Example:
     :keymap helm-lambda-map
     :nohighlight t))
 
-(defun helm-lambda-raw (data)
+(defun helm-lambda-raw (data update-history)
   "Starts a helm session for interactive evaluation and transformation
 of input data."
   (let ((source (-helm-lambda-build-evaluation-result-source data)))
-    (helm-lambda-history-push! source)
+    (when update-history (helm-lambda-history-push! source))
     (helm :sources source
 	  :prompt "Expression: ")))
 
@@ -135,9 +144,15 @@ helm-lambda session."
 	 (data-stringified   (if (and (sequencep data) (not (stringp data)))
 				 (mapcar to-obj-string data)
 			       (list (funcall to-obj-string data)))))
-    (helm-lambda-raw data-stringified)))
+    (helm-lambda-raw data-stringified t)))
 
-(defalias 'helm-lambda 'helm-lambda-stringify-listify
-  "Starts a helm session for interactive evaluation and transformation
-  of input data.")
 
+(defalias 'helm-lambda 'helm-lambda-stringify-listify)
+
+;; ;; Delete when development done
+;; (setq helm-lambda-history '())
+;; (setq helm-lambda-history-index -1)
+;; (helm-lambda '(1 2 3 4))
+;; helm-lambda-history
+;; helm-lambda-history-index
+;; (helm-lambda-history-current)
