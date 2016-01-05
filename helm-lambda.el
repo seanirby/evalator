@@ -2,10 +2,13 @@
 (require 'cl-lib)
 ;; TODO delete this when I move elisp config out to its own package/
 (require 'helm-elisp)
+(require 'helm-lambda-context)
+(require 'helm-lambda-context-elisp)
 
+(setq helm-lambda-eval-context helm-lambda-context-elisp)
 (defvar helm-lambda-history '())
 (defvar helm-lambda-history-index -1)
-(defvar helm-lambda-eval-context nil) ;;stub
+(defvar helm-lambda-eval-context nil)
 (defvar helm-lambda-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map helm-map)
@@ -25,8 +28,8 @@
                           src))))
         (mapcar (funcall partial "Identity" 'identity 0) sources)))
 
-(cl-defun -helm-lambda-marked-candidates (&key with-wildcard)
-  "Same as 'helm-marked-candidates' except it returns an empty list
+(cl-defun helm-lambda-marked-candidates (&key with-wildcard)
+  "Same as 'helm-marked-candidates' except it returns nil 
 if no candidates were marked."
   (with-current-buffer helm-buffer
     (let ((candidates
@@ -75,7 +78,7 @@ if no candidates were marked."
   (interactive)
   (let ((item (helm :sources helm-lambda-emacs-commands-and-functions
                     :allow-nest t)))
-    ;; TODO need to find a way that this opens with the same size as pare
+    ;; TODO need to find a way that this opens with the same size as previous helm session.
     (insert item)))
 
 (defun helm-lambda-history-load ()
@@ -86,91 +89,54 @@ if no candidates were marked."
 
 (defun helm-lambda-confirm-application ()
   "Accepts results and starts a new helm-lambda for further
-transformations."
+transformation."
   (interactive)
   (let ((source (helm-lambda-history-current))
-        (candidates (-helm-lambda-transform-candidates))
+        (candidates (helm-lambda-transform-candidates nil))
         (f (lambda (candidates _) (helm-lambda-raw candidates t))))
     (helm-exit-and-execute-action (apply-partially f candidates))))
 
-(defun -helm-lambda-transform-candidates ()
-  "Transform a group of candidates with the expression entered in the
-minibuffer.  If the user hasn't marked any candidates in the helm
-session then the expression is mapped over all the candidates. If
-there are marked candidates then the expression is applied to the list
-of marked candidates.  The former is useful for candidate
-transformations.  The latter is useful for accumulating a result."
-  (let ((expr (read helm-pattern))
-        (candidates (helm-get-candidates (helm-lambda-history-current))))
-    ;; TODO will need fix for marked candidates
-    (if (equal nil (-helm-lambda-marked-candidates))
-        (mapcar (lambda (candidate)
-                  (prin1-to-string (-helm-lambda-apply-expression expr (read candidate))))
-                candidates)
-      ;; TODO will need fix for marked candidates
-      (list (prin1-to-string (-helm-lambda-apply-expression expr (mapcar 'read (helm-marked-candidates))))))))
+(defun helm-lambda-transform-candidates (should-try)
+  (let* ((keyword (if should-try :transform-candidates-try :transform-candidates))
+         (transform-func (slot-value helm-lambda-eval-context keyword)))
+    (funcall
+     transform-func
+     helm-lambda-eval-context
+     (helm-get-candidates (helm-lambda-history-current))
+     (helm-lambda-marked-candidates)
+     helm-pattern)))
 
-(defun -helm-lambda-transform-candidates-try (_candidates _source)
-  "Attempts -helm-lambda-transform-candidates"
-  (condition-case err
-      (with-helm-current-buffer
-        (-helm-lambda-transform-candidates))
-    (error
-     ;; TODO would be useful to have a red/green flash for this
-     (helm-get-candidates _source))))
-
-(defun -helm-lambda-apply-expression (expr x)
-  "Applies 'expr' to 'x'. Provides wrapper such that expression can
-include '%' symbols. '%' will refer to x. If 'x' is a sequence then
-elements in x can be referenced with %INDEX."
-  (if (and (sequencep x) (not (stringp x)))
-      (let* ((ns (number-sequence 0 (1- (length x))))
-             (arg-names (mapcar (lambda (n) (intern (concat "%" (int-to-string n)))) ns))
-             (% x)
-             (f `(lambda ,arg-names ,expr)))
-        (apply (eval f) (append x nil)))
-    (let* ((% x))
-      (eval expr))))
-
-(defun -helm-lambda-build-evaluation-result-source (data)
+(defun helm-lambda-build-evaluation-result-source (data)
   (helm-build-sync-source "Evaluation Result"
     :volatile t
     :candidates data
-    :filtered-candidate-transformer #'-helm-lambda-transform-candidates-try
+    :filtered-candidate-transformer (lambda (candidates source)
+                                      ;; TODO might be possible to move condition-case to this level
+                                      (with-helm-current-buffer
+                                        (helm-lambda-transform-candidates t)))
     :keymap helm-lambda-map
     :nohighlight t))
 
 (defun helm-lambda-raw (data update-history)
   "Starts a helm session for interactive evaluation and transformation
 of input data."
-  (let ((source (-helm-lambda-build-evaluation-result-source data)))
+  (let ((source (helm-lambda-build-evaluation-result-source data)))
     (when update-history (helm-lambda-history-push! source))
     (helm :sources source
           :buffer "*helm-lambda*"
-          :prompt "Expression: "
-          )))
+          :prompt "Expression: ")))
 
-(defun helm-lambda-stringify-listify (data)
+(defun helm-lambda (data)
   "Converts input data to a list of stringified lisp objects before
 passing it to helm-lambda-raw.  Intended to be the entry point to a
 helm-lambda session."
-  (let* ((to-obj-string (lambda (x)
-                          (prin1-to-string x)))
-         ;;Convert data to a list if not already.
-         ;;Convert all elements in list to the string
-         ;;representation of its lisp object.
-         (data-stringified   (if (and (sequencep data) (not (stringp data)))
-                                 (mapcar to-obj-string data)
-                               (list (funcall to-obj-string data)))))
-    (helm-lambda-raw data-stringified t)))
-
-
-(defalias 'helm-lambda 'helm-lambda-stringify-listify)
+  (helm-lambda-raw (funcall (slot-value helm-lambda-eval-context :stringify-listify) data) t))
 
 ;; ;; Delete when development done
 ;; (setq helm-lambda-history '())
 ;; (setq helm-lambda-history-index -1)
 ;; (helm-lambda '(1 2 3 4))
+;; helm-lambda-eval-context
 ;; helm-lambda-history
 ;; helm-lambda-history-index
 ;; (helm-lambda-history-current)
