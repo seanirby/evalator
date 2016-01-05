@@ -1,6 +1,7 @@
 (require 'helm)
-(require 'helm-elisp)
 (require 'cl-lib)
+;; TODO delete this when I move elisp config out to its own package/
+(require 'helm-elisp)
 
 (defvar helm-lambda-history '())
 (defvar helm-lambda-history-index -1)
@@ -8,10 +9,21 @@
 (defvar helm-lambda-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map helm-map)
+    (define-key map (kbd "C-i") 'helm-lambda-lookup)
     (define-key map (kbd "C-u") 'helm-lambda-confirm-application)
     (define-key map (kbd "C-j") 'helm-lambda-history-next)
     (define-key map (kbd "C-l") 'helm-lambda-history-previous)
     map))
+
+;; TODO delete this when i separate elisp stuff
+(setq helm-lambda-emacs-commands-and-functions
+      (let ((sources `(,(helm-def-source--emacs-functions)
+                       ,(helm-def-source--emacs-commands)))
+            (partial (lambda (name f index)
+                       `(lambda (src)
+                          (helm-add-action-to-source ,name (quote ,f) src ,index)
+                          src))))
+        (mapcar (funcall partial "Identity" 'identity 0) sources)))
 
 (cl-defun -helm-lambda-marked-candidates (&key with-wildcard)
   "Same as 'helm-marked-candidates' except it returns an empty list
@@ -30,12 +42,11 @@ if no candidates were marked."
   (setq helm-lambda-history (cons data (subseq helm-lambda-history helm-lambda-history-index)))
   (setq helm-lambda-history-index 0))
 
-
 (defun helm-lambda-history-pop! ()
   (setq helm-lambda-history (cdr helm-lambda-history))
   (let ((index (if (equal nil helm-lambda-history nil)
-		   -1
-		 (- 1 helm-lambda-history-index))))
+                   -1
+                 (- 1 helm-lambda-history-index))))
     (setq helm-lambda-history-index index)))
 
 (defun helm-lambda-history-clear! ()
@@ -45,27 +56,32 @@ if no candidates were marked."
 (defun helm-lambda-history-current ()
   (nth helm-lambda-history-index helm-lambda-history))
 
+;; TODO There's currently a weird bug happening where spamming the history next
+;; and previous actions will cause the helm session to shut down. Has to do with
+;; let bindings being nested too deep.
 (defun helm-lambda-history-next ()
   (interactive)
-  (let ((index (if (equal 0 helm-lambda-history-index)
-		   0
-		 (- helm-lambda-history-index 1))))
-    (setq helm-lambda-history-index index)
+  (when (not (equal 0 helm-lambda-history-index))
+    (setq helm-lambda-history-index (+ -1 helm-lambda-history-index))
     (helm-lambda-history-load)))
 
 (defun helm-lambda-history-previous ()
   (interactive)
-  (let* ((last-index (- (length helm-lambda-history) 1))
-	(index (if (equal last-index helm-lambda-history-index)
-		   last-index
-		 (+ 1 helm-lambda-history-index))))
-    (setq helm-lambda-history-index index)
+  (when (not (equal (+ -1 (length helm-lambda-history)) helm-lambda-history-index))
+    (setq helm-lambda-history-index (+ 1 helm-lambda-history-index))
     (helm-lambda-history-load)))
+
+(defun helm-lambda-lookup ()
+  (interactive)
+  (let ((item (helm :sources helm-lambda-emacs-commands-and-functions
+                    :allow-nest t)))
+    ;; TODO need to find a way that this opens with the same size as pare
+    (insert item)))
 
 (defun helm-lambda-history-load ()
   (let* ((source (helm-lambda-history-current))
-	(candidates (helm-get-candidates source))
-	(f (lambda (candidates _) (helm-lambda-raw candidates nil))))
+         (candidates (helm-get-candidates source))
+         (f (lambda (candidates _) (helm-lambda-raw candidates nil))))
     (helm-exit-and-execute-action (apply-partially f candidates))))
 
 (defun helm-lambda-confirm-application ()
@@ -73,8 +89,8 @@ if no candidates were marked."
 transformations."
   (interactive)
   (let ((source (helm-lambda-history-current))
-	(candidates (-helm-lambda-transform-candidates))
-	(f (lambda (candidates _) (helm-lambda-raw candidates t))))
+        (candidates (-helm-lambda-transform-candidates))
+        (f (lambda (candidates _) (helm-lambda-raw candidates t))))
     (helm-exit-and-execute-action (apply-partially f candidates))))
 
 (defun -helm-lambda-transform-candidates ()
@@ -85,12 +101,12 @@ there are marked candidates then the expression is applied to the list
 of marked candidates.  The former is useful for candidate
 transformations.  The latter is useful for accumulating a result."
   (let ((expr (read helm-pattern))
-	(candidates (helm-get-candidates (helm-lambda-history-current))))
+        (candidates (helm-get-candidates (helm-lambda-history-current))))
     ;; TODO will need fix for marked candidates
     (if (equal nil (-helm-lambda-marked-candidates))
-	(mapcar (lambda (candidate)
-		  (prin1-to-string (-helm-lambda-apply-expression expr (read candidate))))
-		candidates)
+        (mapcar (lambda (candidate)
+                  (prin1-to-string (-helm-lambda-apply-expression expr (read candidate))))
+                candidates)
       ;; TODO will need fix for marked candidates
       (list (prin1-to-string (-helm-lambda-apply-expression expr (mapcar 'read (helm-marked-candidates))))))))
 
@@ -98,7 +114,7 @@ transformations.  The latter is useful for accumulating a result."
   "Attempts -helm-lambda-transform-candidates"
   (condition-case err
       (with-helm-current-buffer
-	(-helm-lambda-transform-candidates))
+        (-helm-lambda-transform-candidates))
     (error
      ;; TODO would be useful to have a red/green flash for this
      (helm-get-candidates _source))))
@@ -109,10 +125,10 @@ include '%' symbols. '%' will refer to x. If 'x' is a sequence then
 elements in x can be referenced with %INDEX."
   (if (and (sequencep x) (not (stringp x)))
       (let* ((ns (number-sequence 0 (1- (length x))))
-	     (arg-names (mapcar (lambda (n) (intern (concat "%" (int-to-string n)))) ns))
-	     (% x)
-	     (f `(lambda ,arg-names ,expr)))
-	(apply (eval f) (append x nil)))
+             (arg-names (mapcar (lambda (n) (intern (concat "%" (int-to-string n)))) ns))
+             (% x)
+             (f `(lambda ,arg-names ,expr)))
+        (apply (eval f) (append x nil)))
     (let* ((% x))
       (eval expr))))
 
@@ -130,20 +146,22 @@ of input data."
   (let ((source (-helm-lambda-build-evaluation-result-source data)))
     (when update-history (helm-lambda-history-push! source))
     (helm :sources source
-	  :prompt "Expression: ")))
+          :buffer "*helm-lambda*"
+          :prompt "Expression: "
+          )))
 
 (defun helm-lambda-stringify-listify (data)
   "Converts input data to a list of stringified lisp objects before
 passing it to helm-lambda-raw.  Intended to be the entry point to a
 helm-lambda session."
   (let* ((to-obj-string (lambda (x)
-			  (prin1-to-string x)))
-	 ;;Convert data to a list if not already.
-	 ;;Convert all elements in list to the string
-	 ;;representation of its lisp object.
-	 (data-stringified   (if (and (sequencep data) (not (stringp data)))
-				 (mapcar to-obj-string data)
-			       (list (funcall to-obj-string data)))))
+                          (prin1-to-string x)))
+         ;;Convert data to a list if not already.
+         ;;Convert all elements in list to the string
+         ;;representation of its lisp object.
+         (data-stringified   (if (and (sequencep data) (not (stringp data)))
+                                 (mapcar to-obj-string data)
+                               (list (funcall to-obj-string data)))))
     (helm-lambda-raw data-stringified t)))
 
 
