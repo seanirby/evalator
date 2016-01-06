@@ -9,7 +9,11 @@
        :name
        "ELisp"
 
-       :stringify-listify
+       :init
+       (lambda ()
+         (message "initializing"))
+
+       :make-candidates
        (lambda (data)
          (let ((to-obj-string (lambda (x)
                                 (prin1-to-string x))))
@@ -31,7 +35,6 @@
               expression)
            (error
             ;; TODO Would be useful to have a red/green flash for this
-            (my-sp err)
             candidates-all)))
 
        :transform-candidates
@@ -39,22 +42,18 @@
          (let ((apply-expression (slot-value context :apply-expression)))
            (if (equal nil candidates-marked)
                (mapcar (lambda (candidate)
-                         (prin1-to-string
-                          (funcall
-                           apply-expression
-                           expression
-                           candidate)))
+                         (funcall
+                          apply-expression
+                          expression
+                          candidate))
                        candidates-all)
-             (list (prin1-to-string
-                    (funcall
-                     apply-expression
-                     expression
-                     candidates-marked))))))
+             (list (funcall
+                    apply-expression
+                    expression
+                    candidates-marked)))))
        
        :apply-expression
        (lambda (expression-str x)
-         (my-sp x)
-         (my-sp (type-of x))
          (let ((expression (read expression-str)))
            (if (and (sequencep x) (not (stringp x)))
                (let* ((xs (mapcar 'read x))
@@ -62,13 +61,8 @@
                       (arg-names (mapcar (lambda (n) (intern (concat "%" (int-to-string n)))) ns))
                       (% xs)
                       (f `(lambda ,arg-names ,expression)))
-                 (my-sp "applying expression")
-                 (my-sp expression)
-                 (my-sp "to item")
-                 (my-sp xs)
                  (apply (eval f) (append xs nil)))
              (let* ((% (read x)))
-               (my-sp "running here")
                (eval expression)))))))
 
 (provide 'helm-lambda-context-elisp)

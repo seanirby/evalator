@@ -84,7 +84,7 @@ if no candidates were marked."
 (defun helm-lambda-history-load ()
   (let* ((source (helm-lambda-history-current))
          (candidates (helm-get-candidates source))
-         (f (lambda (candidates _) (helm-lambda-raw candidates nil))))
+         (f (lambda (candidates _) (helm-lambda candidates nil))))
     (helm-exit-and-execute-action (apply-partially f candidates))))
 
 (defun helm-lambda-confirm-application ()
@@ -93,7 +93,7 @@ transformation."
   (interactive)
   (let ((source (helm-lambda-history-current))
         (candidates (helm-lambda-transform-candidates nil))
-        (f (lambda (candidates _) (helm-lambda-raw candidates t))))
+        (f (lambda (candidates _) (helm-lambda candidates t))))
     (helm-exit-and-execute-action (apply-partially f candidates))))
 
 (defun helm-lambda-transform-candidates (should-try)
@@ -106,31 +106,27 @@ transformation."
      (helm-lambda-marked-candidates)
      helm-pattern)))
 
-(defun helm-lambda-build-evaluation-result-source (data)
+(defun helm-lambda-build-source (candidates)
   (helm-build-sync-source "Evaluation Result"
     :volatile t
-    :candidates data
-    :filtered-candidate-transformer (lambda (candidates source)
+    :candidates candidates
+    :filtered-candidate-transformer (lambda (_candidates _source)
                                       ;; TODO might be possible to move condition-case to this level
                                       (with-helm-current-buffer
                                         (helm-lambda-transform-candidates t)))
     :keymap helm-lambda-map
     :nohighlight t))
 
-(defun helm-lambda-raw (data update-history)
+(defun helm-lambda (data &optional update-history)
   "Starts a helm session for interactive evaluation and transformation
 of input data."
-  (let ((source (helm-lambda-build-evaluation-result-source data)))
+  (funcall (slot-value helm-lambda-eval-context :init))
+  (let* ((candidates (funcall (slot-value helm-lambda-eval-context :make-candidates) data))
+         (source (helm-lambda-build-source candidates)))
     (when update-history (helm-lambda-history-push! source))
     (helm :sources source
           :buffer "*helm-lambda*"
           :prompt "Expression: ")))
-
-(defun helm-lambda (data)
-  "Converts input data to a list of stringified lisp objects before
-passing it to helm-lambda-raw.  Intended to be the entry point to a
-helm-lambda session."
-  (helm-lambda-raw (funcall (slot-value helm-lambda-eval-context :stringify-listify) data) t))
 
 ;; ;; Delete when development done
 ;; (setq helm-lambda-history '())
