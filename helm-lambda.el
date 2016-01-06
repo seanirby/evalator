@@ -5,7 +5,7 @@
 (require 'helm-lambda-context)
 (require 'helm-lambda-context-elisp)
 
-(setq helm-lambda-eval-context helm-lambda-context-elisp)
+(defvar helm-lambda-eval-context nil)
 (defvar helm-lambda-history '())
 (defvar helm-lambda-history-index -1)
 (defvar helm-lambda-eval-context nil)
@@ -136,3 +136,5 @@ of input data."
 ;; helm-lambda-history
 ;; helm-lambda-history-index
 ;; (helm-lambda-history-current)
+
+(provide 'helm-lambda)
