@@ -39,8 +39,8 @@
     "Function that applies an expression over a selection of
     candidates.  If no candidates are marked, then the selection will
     be all candidates.  Otherwise, the selection will be the marked
-    candidates.  Function should accept an evaluation context, all
-    current candidates, all marked candidates, and an expression
-    string as arguments.  Function should return a list of strings.")))
+    candidates.  Function should accept all current candidates, all 
+    marked candidates, and an expression string as arguments. Function 
+    should return a list of strings.")))
 
 (provide 'helm-lambda-context)
