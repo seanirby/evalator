@@ -1,6 +1,5 @@
 (require 'eieio)
 
-
 ;; References to data types in the docstrings below are assumed to be elisp types.
 (defclass helm-lambda-context ()
   ((name
@@ -42,14 +41,6 @@
     be all candidates.  Otherwise, the selection will be the marked
     candidates.  Function should accept an evaluation context, all
     current candidates, all marked candidates, and an expression
-    string as arguments.  Function should return a list of strings.")
-
-   (apply-expression
-    :initarg :apply-expression
-    :custom function
-    :documentation
-    "Function that applies an expression to a candidate or sequence of
-    candidates.  Evaluation is done by the defined context.  Should
-    return a new candidate or sequence of candidates.")))
+    string as arguments.  Function should return a list of strings.")))
 
 (provide 'helm-lambda-context)

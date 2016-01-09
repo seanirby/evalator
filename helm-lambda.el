@@ -5,10 +5,9 @@
 (require 'helm-lambda-context)
 (require 'helm-lambda-context-elisp)
 
-(defvar helm-lambda-eval-context nil)
+(defvar helm-lambda-eval-context helm-lambda-context-elisp)
 (defvar helm-lambda-history '())
 (defvar helm-lambda-history-index -1)
-(defvar helm-lambda-eval-context nil)
 (defvar helm-lambda-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map helm-map)
@@ -27,6 +26,11 @@
                           (helm-add-action-to-source ,name (quote ,f) src ,index)
                           src))))
         (mapcar (funcall partial "Identity" 'identity 0) sources)))
+
+(defun helm-lambda-thing-before-point (&optional limits regexp)
+  "TEMP"
+  (save-excursion
+    (buffer-substring-no-properties (point-at-bol) (point))))
 
 (cl-defun helm-lambda-marked-candidates (&key with-wildcard)
   "Same as 'helm-marked-candidates' except it returns nil 
@@ -84,7 +88,7 @@ if no candidates were marked."
 (defun helm-lambda-history-load ()
   (let* ((source (helm-lambda-history-current))
          (candidates (helm-get-candidates source))
-         (f (lambda (candidates _) (helm-lambda candidates nil))))
+         (f (lambda (candidates _) (helm-lambda candidates nil nil))))
     (helm-exit-and-execute-action (apply-partially f candidates))))
 
 (defun helm-lambda-confirm-application ()
@@ -93,7 +97,7 @@ transformation."
   (interactive)
   (let ((source (helm-lambda-history-current))
         (candidates (helm-lambda-transform-candidates nil))
-        (f (lambda (candidates _) (helm-lambda candidates t))))
+        (f (lambda (candidates _) (helm-lambda candidates nil t))))
     (helm-exit-and-execute-action (apply-partially f candidates))))
 
 (defun helm-lambda-transform-candidates (should-try)
@@ -101,7 +105,6 @@ transformation."
          (transform-func (slot-value helm-lambda-eval-context keyword)))
     (funcall
      transform-func
-     helm-lambda-eval-context
      (helm-get-candidates (helm-lambda-history-current))
      (helm-lambda-marked-candidates)
      helm-pattern)))
@@ -117,24 +120,51 @@ transformation."
     :keymap helm-lambda-map
     :nohighlight t))
 
-(defun helm-lambda (data &optional update-history)
+(defun helm-lambda (&optional candidates initp hist-pushp)
   "Starts a helm session for interactive evaluation and transformation
 of input data."
-  (funcall (slot-value helm-lambda-eval-context :init))
-  (let* ((candidates (funcall (slot-value helm-lambda-eval-context :make-candidates) data))
+  (interactive)
+  (when (or (called-interactively-p 'any) initp)
+    (funcall (slot-value helm-lambda-eval-context :init)))
+  (let* ((candidates (if (equal nil candidates)
+                         (funcall (slot-value helm-lambda-eval-context :make-candidates)
+                                  (helm-lambda-thing-before-point))
+                       candidates))
          (source (helm-lambda-build-source candidates)))
-    (when update-history (helm-lambda-history-push! source))
+
+    ;; Only update history if user calls helm-lambda, otherwise, update history in key actions.
+    (when (or (called-interactively-p 'any) hist-pushp)
+      (helm-lambda-history-push! source))
     (helm :sources source
           :buffer "*helm-lambda*"
           :prompt "Expression: ")))
 
-;; ;; Delete when development done
-;; (setq helm-lambda-history '())
-;; (setq helm-lambda-history-index -1)
-;; (helm-lambda '(1 2 3 4))
-;; helm-lambda-eval-context
-;; helm-lambda-history
-;; helm-lambda-history-index
-;; (helm-lambda-history-current)
+;; TODO comment or remove these when development done
+(defun helm-lambda-dev-reload ()
+  (interactive)
+  (let ((ciderclj "helm-lambda-context-cider.clj")
+        (ciderel "helm-lambda-context-cider.el")
+        (testclj "test.clj")
+        (lambdael "helm-lambda.el"))
+    (with-current-buffer ciderclj
+      (save-buffer)
+      (cider-eval-buffer))
+    (with-current-buffer testclj
+      (save-buffer)
+      (cider-eval-buffer))
+    (with-current-buffer ciderel
+      (save-buffer)
+      (eval-buffer))
+    (setq helm-lambda-history '())
+    (setq helm-lambda-history-index -1)
+    (setq helm-lambda-eval-context helm-lambda-context-cider)
+    (setq helm-lambda-eval-context helm-lambda-context-cider)))
+
+(defun helm-lambda-dev ()
+  (interactive)
+  (helm-lambda-dev-reload)
+  (helm-lambda nil t t))
+
+(setq helm-lambda-eval-context helm-lambda-context-elisp)
 
 (provide 'helm-lambda)
