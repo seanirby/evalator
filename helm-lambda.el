@@ -7,8 +7,8 @@
 
 (defvar helm-lambda-state-default (list :eval-context  helm-lambda-context-elisp
                                         :mode          :simple
-                                        :history       '()
-                                        :history-index -1))
+                                        :history       []
+                                        :history-index 0))
 
 (defvar helm-lambda-state (copy-sequence helm-lambda-state-default))
 (defvar helm-lambda-map
@@ -63,26 +63,26 @@ if no candidates were marked."
 (defun helm-lambda-history-push! (data)
   "Push the current source and expression onto history"
   (setq helm-lambda-state (plist-put helm-lambda-state :history
-                                     (cons (list :source data :expression helm-pattern)
-                                           (subseq (helm-lambda-history) (helm-lambda-history-index)))))
-  (setq helm-lambda-state (plist-put helm-lambda-state :history-index 0)))
+                                     (vconcat (subseq (helm-lambda-history) 0 (+ 1 (helm-lambda-history-index)))
+                                              (list (list :source data :expression helm-pattern)))))
+  (setq helm-lambda-state (plist-put helm-lambda-state :history-index (+ 1 (helm-lambda-history-index)))))
 
 (defun helm-lambda-history-current (&optional k)
   "Helper to retrieve active history element.  Accepts an optional key."
-  (let ((h (nth (helm-lambda-history-index) (helm-lambda-history))))
+  (let ((h (elt (helm-lambda-history) (helm-lambda-history-index))))
     (if k (plist-get h k) h)))
 
 ;; TODO There's currently a weird bug happening where spamming the history next
 ;; and previous actions will cause the helm session to shut down. Has to do with
 ;; let bindings being nested too deep.
-(defun helm-lambda-history-next ()
+(defun helm-lambda-history-previous ()
   "Go to the next history state and update the helm session."
   (interactive)
   (when (not (equal 0 (helm-lambda-history-index)))
     (setq helm-lambda-state (plist-put helm-lambda-state :history-index (+ -1 (helm-lambda-history-index))))
     (helm-lambda-history-load)))
 
-(defun helm-lambda-history-previous ()
+(defun helm-lambda-history-next ()
   "Got to the previous history state and update the helm session."
   (interactive)
   (when (not (equal (+ -1 (length (helm-lambda-history))) (helm-lambda-history-index)))
