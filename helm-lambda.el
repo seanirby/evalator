@@ -1,7 +1,5 @@
 (require 'helm)
 (require 'cl-lib)
-;; TODO delete this when I move elisp config out to its own package/
-(require 'helm-elisp)
 (require 'helm-lambda-context)
 (require 'helm-lambda-context-elisp)
 
@@ -36,16 +34,6 @@ for this to work."
 (defun helm-lambda-state-init ()
   "Helper to set state back to initial value."
   (setq helm-lambda-state (copy-sequence helm-lambda-state-default)))
-
-;; TODO delete this when i separate elisp stuff
-(setq helm-lambda-emacs-commands-and-functions
-      (let ((sources `(,(helm-def-source--emacs-functions)
-                       ,(helm-def-source--emacs-commands)))
-            (partial (lambda (name f index)
-                       `(lambda (src)
-                          (helm-add-action-to-source ,name (quote ,f) src ,index)
-                          src))))
-        (mapcar (funcall partial "Identity" 'identity 0) sources)))
 
 (defun helm-lambda-thing-before-point (&optional limits regexp)
   "TEMP"
