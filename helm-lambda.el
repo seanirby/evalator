@@ -16,6 +16,7 @@
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map helm-map)
     (define-key map (kbd "C-i") 'helm-lambda-lookup)
+    (define-key map (kbd "RET") 'helm-lambda-confirm-application)
     (define-key map (kbd "C-u") 'helm-lambda-confirm-application)
     (define-key map (kbd "C-j") 'helm-lambda-history-next)
     (define-key map (kbd "C-l") 'helm-lambda-history-previous)
