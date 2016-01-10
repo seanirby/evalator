@@ -1,7 +1,7 @@
 (require 'eieio)
 
 ;; References to data types in the docstrings below are assumed to be elisp types.
-(defclass helm-lambda-context ()
+(defclass evalator-context ()
   ((name
     :initarg :name
     :custom string
@@ -43,4 +43,4 @@
     marked candidates, and an expression string as arguments. Function 
     should return a list of strings.")))
 
-(provide 'helm-lambda-context)
+(provide 'evalator-context)

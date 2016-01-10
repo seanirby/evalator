@@ -1,7 +1,7 @@
-(require 'helm-lambda-context)
+(require 'evalator-context)
 (require 'eieio)
 
-(defun helm-lambda-context-elisp-make-candidates (input mode &optional not-initialp)
+(defun evalator-context-elisp-make-candidates (input mode &optional not-initialp)
   (let* ((data (if not-initialp input (eval (read input))))
          (to-obj-string (lambda (x)
                           (prin1-to-string x))))
@@ -13,29 +13,29 @@
      ((and (not (stringp data)) (sequencep data)) (mapcar to-obj-string data))
      (t (list (funcall to-obj-string data))))))
 
-(defun helm-lambda-context-elisp-transform-candidates-try (candidates-all candidates-marked expression mode)
+(defun evalator-context-elisp-transform-candidates-try (candidates-all candidates-marked expression mode)
   (condition-case err
-      (helm-lambda-context-elisp-transform-candidates candidates-all
-                                                      candidates-marked
-                                                      expression
-                                                      mode)
+      (evalator-context-elisp-transform-candidates candidates-all
+                                                   candidates-marked
+                                                   expression
+                                                   mode)
     (error
      ;; TODO Would be useful to have a red/green flash for this
      candidates-all)))
 
-(defun helm-lambda-context-elisp-transform-candidates (candidates-all candidates-marked expression mode)
-  (helm-lambda-context-elisp-make-candidates
+(defun evalator-context-elisp-transform-candidates (candidates-all candidates-marked expression mode)
+  (evalator-context-elisp-make-candidates
    (if (equal nil candidates-marked)
        (mapcar (lambda (candidate)
-                 (helm-lambda-context-elisp-apply-expression expression
-                                                             candidate))
+                 (evalator-context-elisp-apply-expression expression
+                                                          candidate))
                candidates-all)
-     (helm-lambda-context-elisp-apply-expression expression
-                                                 candidates-marked))
+     (evalator-context-elisp-apply-expression expression
+                                              candidates-marked))
    mode
    t))
 
-(defun helm-lambda-context-elisp-apply-expression (expression-str x)
+(defun evalator-context-elisp-apply-expression (expression-str x)
   (let ((expression (read expression-str)))
     (if (and (sequencep x) (not (stringp x)))
         (let* ((xs (mapcar 'read x))
@@ -48,9 +48,9 @@
         (eval expression)))))
 
 ;; TODO kinda confused on the difference between defvar and setq, figure this out.
-(setq helm-lambda-context-elisp
+(setq evalator-context-elisp
       (make-instance
-       'helm-lambda-context
+       'evalator-context
        
        :name
        "ELisp"
@@ -59,14 +59,14 @@
        (lambda () nil)
 
        :make-candidates
-       'helm-lambda-context-elisp-make-candidates
+       'evalator-context-elisp-make-candidates
        
 
        :transform-candidates-try
-       'helm-lambda-context-elisp-transform-candidates-try
+       'evalator-context-elisp-transform-candidates-try
        
 
        :transform-candidates
-       'helm-lambda-context-elisp-transform-candidates))
+       'evalator-context-elisp-transform-candidates))
 
-(provide 'helm-lambda-context-elisp)
+(provide 'evalator-context-elisp)
