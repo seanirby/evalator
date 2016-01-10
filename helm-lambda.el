@@ -7,8 +7,9 @@
 
 (defvar helm-lambda-state-default (list :eval-context  helm-lambda-context-elisp
                                         :mode          :simple
+                                        :seed          nil
                                         :history       []
-                                        :history-index 0))
+                                        :history-index -1))
 
 (defvar helm-lambda-state (copy-sequence helm-lambda-state-default))
 (defvar helm-lambda-map
@@ -102,7 +103,9 @@ the environment."
   "Quits the current helm session and loads a new one."
   (let* ((source (helm-lambda-history-current :source))
          (candidates (helm-get-candidates source))
-         (f (lambda (candidates _) (helm-lambda candidates nil nil))))
+         (f (lambda (candidates _) (helm-lambda :candidates candidates
+                                                :initp      nil
+                                                :hist-pushp nil))))
     (helm-exit-and-execute-action (apply-partially f candidates))))
 
 (defun helm-lambda-confirm-application ()
@@ -111,7 +114,9 @@ transformation."
   (interactive)
   (let ((source (helm-lambda-history-current :source))
         (candidates (helm-lambda-transform-candidates nil))
-        (f (lambda (candidates _) (helm-lambda candidates nil t))))
+        (f (lambda (candidates _) (helm-lambda :candidates candidates
+                                               :initp      nil
+                                               :hist-pushp t))))
     (helm-exit-and-execute-action (apply-partially f candidates))))
 
 (defun helm-lambda-transform-candidates (should-try)
@@ -139,24 +144,47 @@ candidates."
     :keymap helm-lambda-map
     :nohighlight t))
 
-(defun helm-lambda (&optional candidates initp hist-pushp)
+(defun helm-lambda (&rest o)
   "Starts a helm session for interactive evaluation and transformation
-of input data."
-  (interactive)
-  (when (or (called-interactively-p 'any) initp)
-    (funcall (slot-value helm-lambda-eval-context :init)))
-  (let* ((candidates (if (equal nil candidates)
-                         (funcall (slot-value helm-lambda-eval-context :make-candidates)
-                                  (helm-lambda-thing-before-point))
-                       candidates))
-         (source (helm-lambda-build-source candidates)))
+of input data.  Optional argument o may have the following properties:
 
-    ;; Only update history if user calls helm-lambda, otherwise, update history in key actions.
-    (when (or (called-interactively-p 'any) hist-pushp)
-      ;; Intention is to only initialize on entry to the helm session
-      (when (not hist-pushp)
-        (helm-lambda-state-init))
+:input 
+The input string used to make the helm candidates.  Will be the
+text behind the cursor if not present.
+
+:candidates 
+The candidates to use for building a helm source. If this
+argument is present the :input property is ignored.
+
+:initp 
+Flag to force initialization.  Initialization will always occur if
+helm-lambda is called interactively.
+
+:hist-pushp 
+Flag to force push source onto history.  A history push will always
+occur if helm-lambda is called interactively."
+  (interactive)
+  
+  (when (or (called-interactively-p 'any) (plist-get o :initp))
+    (helm-lambda-state-init)
+    (funcall (slot-value helm-lambda-eval-context :init)))
+
+  (let* ((candidatesp (not (equal nil (plist-get o :candidates))))
+         (input (when (not candidatesp)
+                  (or (plist-get o :input) (helm-lambda-thing-before-point))))
+         (candidates (if candidatesp
+                         (plist-get o :candidates)
+                       (funcall (slot-value helm-lambda-eval-context :make-candidates)
+                                input)))
+         (source (helm-lambda-build-source candidates)))
+    
+    ;; Remember initial input so an equivalent expression can be created later
+    (when (not candidatesp)
+      (plist-put helm-lambda-state :seed input))
+    
+    (when (or (called-interactively-p 'any) (plist-get o :hist-pushp))
       (helm-lambda-history-push! source))
+    
     (helm :sources source
           :buffer "*helm-lambda*"
           :prompt "Expression: ")))
@@ -185,6 +213,6 @@ of input data."
 (defun helm-lambda-dev ()
   (interactive)
   (helm-lambda-dev-reload)
-  (helm-lambda nil t t))
+  (helm-lambda :initp t :hist-pushp t))
 
 (provide 'helm-lambda)
