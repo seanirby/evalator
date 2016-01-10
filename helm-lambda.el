@@ -3,6 +3,9 @@
 (require 'helm-lambda-context)
 (require 'helm-lambda-context-elisp)
 
+
+;; State
+
 (defvar helm-lambda-state-default (list :eval-context  helm-lambda-context-elisp
                                         :mode          :normal
                                         :seed          nil
@@ -13,27 +16,90 @@
 (defvar helm-lambda-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map helm-map)
-    (define-key map (kbd "C-i") 'helm-lambda-lookup)
     (define-key map (kbd "RET") 'helm-lambda-confirm-application)
     (define-key map (kbd "C-u") 'helm-lambda-confirm-application)
     (define-key map (kbd "C-j") 'helm-lambda-history-next)
     (define-key map (kbd "C-l") 'helm-lambda-history-previous)
     map))
 
-(defun helm-lambda-insert-last-equiv-expr ()
-  "Inserts the equivalent expression of the previous helm-lambda
-session.  NOTE: Session must have been run with 'helm-lambda-explicit'
-for this to work."
-  (interactive)
-  (let ((exprs (cons (plist-get helm-lambda-state :seed)
-                     (cdr (mapcar (lambda (h)
-                                    (plist-get h :expression)) (plist-get helm-lambda-state :history))))))
-    (with-current-buffer
-        (insert (reduce (lambda (e1 e2) (replace-regexp-in-string "%" e1 e2)) exprs)))))
-
 (defun helm-lambda-state-init ()
-  "Helper to set state back to initial value."
+  "Set state back to initial value."
   (setq helm-lambda-state (copy-sequence helm-lambda-state-default)))
+
+
+
+
+
+;; History
+
+(defun helm-lambda-history ()
+  "Return history"
+  (plist-get helm-lambda-state :history))
+
+(defun helm-lambda-history-index ()
+  "Return current history index"
+  (plist-get helm-lambda-state :history-index))
+
+(defun helm-lambda-history-push! (data)
+  "Push the current source and expression onto history"
+  (setq helm-lambda-state (plist-put helm-lambda-state :history
+                                     (vconcat (subseq (helm-lambda-history) 0 (+ 1 (helm-lambda-history-index)))
+                                              (list (list :source data :expression helm-pattern)))))
+  (setq helm-lambda-state (plist-put helm-lambda-state :history-index (+ 1 (helm-lambda-history-index)))))
+
+(defun helm-lambda-history-current (&optional k)
+  "Retrieve active history element.  Accepts an optional key."
+  (let ((h (elt (helm-lambda-history) (helm-lambda-history-index))))
+    (if k (plist-get h k) h)))
+
+(defun helm-lambda-history-load ()
+  "Quits the current helm session and loads a new one."
+  (let* ((source (helm-lambda-history-current :source))
+         (candidates (helm-get-candidates source))
+         (f (lambda (candidates _) (helm-lambda :candidates candidates
+                                                :initp      nil
+                                                :hist-pushp nil))))
+    (helm-exit-and-execute-action (apply-partially f candidates))))
+
+
+
+
+
+;; Key Actions
+
+;; TODO There's currently a weird bug happening where spamming the history next
+;; and previous actions will cause the helm session to shut down. Has to do with
+;; let bindings being nested too deep.
+(defun helm-lambda-history-previous ()
+  "Go to the next history state and update the helm session."
+  (interactive)
+  (when (not (equal 0 (helm-lambda-history-index)))
+    (setq helm-lambda-state (plist-put helm-lambda-state :history-index (+ -1 (helm-lambda-history-index))))
+    (helm-lambda-history-load)))
+
+(defun helm-lambda-history-next ()
+  "Go to the previous history state and update the helm session."
+  (interactive)
+  (when (not (equal (+ -1 (length (helm-lambda-history))) (helm-lambda-history-index)))
+    (setq helm-lambda-state (plist-put helm-lambda-state :history-index (+ 1 (helm-lambda-history-index))))
+    (helm-lambda-history-load)))
+
+(defun helm-lambda-confirm-application ()
+  "Accepts results and starts a new helm-lambda for further
+transformation."
+  (interactive)
+  (let ((source (helm-lambda-history-current :source))
+        (candidates (helm-lambda-transform-candidates nil))
+        (f (lambda (candidates _) (helm-lambda :candidates candidates
+                                               :initp      nil
+                                               :hist-pushp t))))
+    (helm-exit-and-execute-action (apply-partially f candidates))))
+
+
+
+
+
+;; Other
 
 (defun helm-lambda-thing-before-point (&optional limits regexp)
   "TEMP"
@@ -53,71 +119,25 @@ if no candidates were marked."
                     finally return cands)))
       candidates)))
 
-(defun helm-lambda-history ()
-  "Helper to return history"
-  (plist-get helm-lambda-state :history))
+(defun helm-lambda-build-source (candidates mode)
+  "Builds the source for a helm lambda session.  Accepts a list of
+candidates."
+  (helm-build-sync-source (concat "Evaluation Result" (when (equal :explicit mode) "(Explicit)"))
+    :volatile t
+    :candidates candidates
+    :filtered-candidate-transformer (lambda (_candidates _source)
+                                      ;; TODO might be possible to move condition-case to this level
+                                      (with-helm-current-buffer
+                                        (helm-lambda-transform-candidates t)))
+    :keymap helm-lambda-map
+    :nohighlight t
+    :nomark (equal :explicit mode)))
 
-(defun helm-lambda-history-index ()
-  "Helper to return current history index"
-  (plist-get helm-lambda-state :history-index))
 
-(defun helm-lambda-history-push! (data)
-  "Push the current source and expression onto history"
-  (setq helm-lambda-state (plist-put helm-lambda-state :history
-                                     (vconcat (subseq (helm-lambda-history) 0 (+ 1 (helm-lambda-history-index)))
-                                              (list (list :source data :expression helm-pattern)))))
-  (setq helm-lambda-state (plist-put helm-lambda-state :history-index (+ 1 (helm-lambda-history-index)))))
 
-(defun helm-lambda-history-current (&optional k)
-  "Helper to retrieve active history element.  Accepts an optional key."
-  (let ((h (elt (helm-lambda-history) (helm-lambda-history-index))))
-    (if k (plist-get h k) h)))
 
-;; TODO There's currently a weird bug happening where spamming the history next
-;; and previous actions will cause the helm session to shut down. Has to do with
-;; let bindings being nested too deep.
-(defun helm-lambda-history-previous ()
-  "Go to the next history state and update the helm session."
-  (interactive)
-  (when (not (equal 0 (helm-lambda-history-index)))
-    (setq helm-lambda-state (plist-put helm-lambda-state :history-index (+ -1 (helm-lambda-history-index))))
-    (helm-lambda-history-load)))
 
-(defun helm-lambda-history-next ()
-  "Got to the previous history state and update the helm session."
-  (interactive)
-  (when (not (equal (+ -1 (length (helm-lambda-history))) (helm-lambda-history-index)))
-    (setq helm-lambda-state (plist-put helm-lambda-state :history-index (+ 1 (helm-lambda-history-index))))
-    (helm-lambda-history-load)))
-
-(defun helm-lambda-lookup ()
-  "Starts a nested helm session that allows a user to pick symbol from
-the environment."
-  (interactive)
-  (let ((item (helm :sources helm-lambda-emacs-commands-and-functions
-                    :allow-nest t)))
-    ;; TODO need to find a way that this opens with the same size as previous helm session.
-    (insert item)))
-
-(defun helm-lambda-history-load ()
-  "Quits the current helm session and loads a new one."
-  (let* ((source (helm-lambda-history-current :source))
-         (candidates (helm-get-candidates source))
-         (f (lambda (candidates _) (helm-lambda :candidates candidates
-                                                :initp      nil
-                                                :hist-pushp nil))))
-    (helm-exit-and-execute-action (apply-partially f candidates))))
-
-(defun helm-lambda-confirm-application ()
-  "Accepts results and starts a new helm-lambda for further
-transformation."
-  (interactive)
-  (let ((source (helm-lambda-history-current :source))
-        (candidates (helm-lambda-transform-candidates nil))
-        (f (lambda (candidates _) (helm-lambda :candidates candidates
-                                               :initp      nil
-                                               :hist-pushp t))))
-    (helm-exit-and-execute-action (apply-partially f candidates))))
+;; Context evaluation
 
 (defun helm-lambda-transform-candidates (should-try)
   "Call the evaluation contexts transform candidates function.  If the
@@ -132,19 +152,27 @@ called.  Otherwise, the 'transform-candidates function is called."
      helm-pattern
      (plist-get helm-lambda-state :mode))))
 
-(defun helm-lambda-build-source (candidates mode)
-  "Builds the source for a helm lambda session.  Accepts a list of
-candidates."
-  (helm-build-sync-source (concat "Evaluation Result" (when (equal :explicit mode) "(Explicit)"))
-    :volatile t
-    :candidates candidates
-    :filtered-candidate-transformer (lambda (_candidates _source)
-                                      ;; TODO might be possible to move condition-case to this level
-                                      (with-helm-current-buffer
-                                        (helm-lambda-transform-candidates t)))
-    :keymap helm-lambda-map
-    :nohighlight t
-    :nomark (equal :explicit mode)))
+
+
+
+
+;; User functions
+
+(defun helm-lambda-insert-last-equiv-expr ()
+  "Inserts the equivalent expression of the previous helm-lambda
+session.  NOTE: Session must have been run with 'helm-lambda-explicit'
+for this to work."
+  (interactive)
+  (let ((exprs (cons (plist-get helm-lambda-state :seed)
+                     (cdr (mapcar (lambda (h)
+                                    (plist-get h :expression)) (plist-get helm-lambda-state :history))))))
+    (with-current-buffer
+        (insert (reduce (lambda (e1 e2) (replace-regexp-in-string "%" e1 e2)) exprs)))))
+
+(defun helm-lambda-resume ()
+  "Resumes last helm-lambda session."
+  (interactive)
+  (helm-resume "*helm-lambda*"))
 
 (defun helm-lambda (&rest o)
   "Starts a helm session for interactive evaluation and transformation
@@ -204,6 +232,9 @@ Tells helm lambda what mode to use.  Defaults to :normal."
                :hist-pushp t
                :mode       :explicit))
 
+(provide 'helm-lambda)
+
+;; Dev
 ;; TODO comment or remove these when development done
 (defun helm-lambda-dev-reload ()
   (interactive)
@@ -230,4 +261,3 @@ Tells helm lambda what mode to use.  Defaults to :normal."
   (helm-lambda-dev-reload)
   (helm-lambda :initp t :hist-pushp t))
 
-(provide 'helm-lambda)
