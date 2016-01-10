@@ -22,6 +22,17 @@
     (define-key map (kbd "C-l") 'helm-lambda-history-previous)
     map))
 
+(defun helm-lambda-insert-last-equiv-expr ()
+  "Inserts the equivalent expression of the previous helm-lambda
+session.  NOTE: Session must have been run with 'helm-lambda-explicit'
+for this to work."
+  (interactive)
+  (let ((exprs (cons (plist-get helm-lambda-state :seed)
+                     (cdr (mapcar (lambda (h)
+                                    (plist-get h :expression)) (plist-get helm-lambda-state :history))))))
+    (with-current-buffer
+        (insert (reduce (lambda (e1 e2) (replace-regexp-in-string "%" e1 e2)) exprs)))))
+
 (defun helm-lambda-state-init ()
   "Helper to set state back to initial value."
   (setq helm-lambda-state (copy-sequence helm-lambda-state-default)))
