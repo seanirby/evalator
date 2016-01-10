@@ -6,7 +6,7 @@
 (require 'helm-lambda-context-elisp)
 
 (defvar helm-lambda-state-default (list :eval-context  helm-lambda-context-elisp
-                                        :mode          :simple
+                                        :mode          :normal
                                         :seed          nil
                                         :history       []
                                         :history-index -1))
@@ -130,12 +130,13 @@ called.  Otherwise, the 'transform-candidates function is called."
      transform-func
      (helm-get-candidates (helm-lambda-history-current :source))
      (helm-lambda-marked-candidates)
-     helm-pattern)))
+     helm-pattern
+     (plist-get helm-lambda-state :mode))))
 
-(defun helm-lambda-build-source (candidates)
+(defun helm-lambda-build-source (candidates mode)
   "Builds the source for a helm lambda session.  Accepts a list of
 candidates."
-  (helm-build-sync-source "Evaluation Result"
+  (helm-build-sync-source (concat "Evaluation Result" (when (equal :explicit mode) "(Explicit)"))
     :volatile t
     :candidates candidates
     :filtered-candidate-transformer (lambda (_candidates _source)
@@ -143,7 +144,8 @@ candidates."
                                       (with-helm-current-buffer
                                         (helm-lambda-transform-candidates t)))
     :keymap helm-lambda-map
-    :nohighlight t))
+    :nohighlight t
+    :nomark (equal :explicit mode)))
 
 (defun helm-lambda (&rest o)
   "Starts a helm session for interactive evaluation and transformation
@@ -163,11 +165,16 @@ helm-lambda is called interactively.
 
 :hist-pushp 
 Flag to force push source onto history.  A history push will always
-occur if helm-lambda is called interactively."
+occur if helm-lambda is called interactively.
+
+:mode 
+Tells helm lambda what mode to use.  Defaults to :normal."
   (interactive)
   
   (when (or (called-interactively-p 'any) (plist-get o :initp))
     (helm-lambda-state-init)
+    (when (plist-get o :mode)
+      (setq helm-lambda-state (plist-put helm-lambda-state :mode (plist-get o :mode))))
     (funcall (slot-value helm-lambda-eval-context :init)))
 
   (let* ((candidatesp (not (equal nil (plist-get o :candidates))))
@@ -176,12 +183,13 @@ occur if helm-lambda is called interactively."
          (candidates (if candidatesp
                          (plist-get o :candidates)
                        (funcall (slot-value helm-lambda-eval-context :make-candidates)
-                                input)))
-         (source (helm-lambda-build-source candidates)))
+                                input
+                                (plist-get helm-lambda-state :mode))))
+         (source (helm-lambda-build-source candidates (plist-get helm-lambda-state :mode))))
     
     ;; Remember initial input so an equivalent expression can be created later
-    (when (not candidatesp)
-      (plist-put helm-lambda-state :seed input))
+    (when (or (called-interactively-p 'any) (plist-get o :initp))
+      (setq helm-lambda-state (plist-put helm-lambda-state :seed input)))
     
     (when (or (called-interactively-p 'any) (plist-get o :hist-pushp))
       (helm-lambda-history-push! source))
@@ -189,6 +197,13 @@ occur if helm-lambda is called interactively."
     (helm :sources source
           :buffer "*helm-lambda*"
           :prompt "Expression: ")))
+
+(defun helm-lambda-explicit ()
+  (interactive)
+  (helm-lambda :input      (prin1-to-string (read))
+               :initp      t
+               :hist-pushp t
+               :mode       :explicit))
 
 ;; TODO comment or remove these when development done
 (defun helm-lambda-dev-reload ()

@@ -1,25 +1,29 @@
 (require 'helm-lambda-context)
 (require 'eieio)
 
-(defun helm-lambda-context-elisp-make-candidates (input &optional skip-readp)
-  (let* ((data (if skip-readp input (eval (read input))))
+(defun helm-lambda-context-elisp-make-candidates (input mode &optional not-initialp)
+  (let* ((data (if not-initialp input (eval (read input))))
          (to-obj-string (lambda (x)
                           (prin1-to-string x))))
+    (my-sp (funcall to-obj-string data))
     (cond
-     ((stringp data) (list data))
-     ((sequencep data) (mapcar to-obj-string data))
+     ((equal :explicit mode) (if not-initialp
+                                 (list (funcall to-obj-string (car data)))
+                               (list (funcall to-obj-string data))))
+     ((and (not (stringp data)) (sequencep data)) (mapcar to-obj-string data))
      (t (list (funcall to-obj-string data))))))
 
-(defun helm-lambda-context-elisp-transform-candidates-try (candidates-all candidates-marked expression)
+(defun helm-lambda-context-elisp-transform-candidates-try (candidates-all candidates-marked expression mode)
   (condition-case err
       (helm-lambda-context-elisp-transform-candidates candidates-all
                                                       candidates-marked
-                                                      expression)
+                                                      expression
+                                                      mode)
     (error
      ;; TODO Would be useful to have a red/green flash for this
      candidates-all)))
 
-(defun helm-lambda-context-elisp-transform-candidates (candidates-all candidates-marked expression)
+(defun helm-lambda-context-elisp-transform-candidates (candidates-all candidates-marked expression mode)
   (helm-lambda-context-elisp-make-candidates
    (if (equal nil candidates-marked)
        (mapcar (lambda (candidate)
@@ -28,6 +32,7 @@
                candidates-all)
      (helm-lambda-context-elisp-apply-expression expression
                                                  candidates-marked))
+   mode
    t))
 
 (defun helm-lambda-context-elisp-apply-expression (expression-str x)
