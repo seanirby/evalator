@@ -7,10 +7,10 @@
 ;; State
 
 (defvar evalator-state-default (list :eval-context  evalator-context-elisp
-                                        :mode          :normal
-                                        :seed          nil
-                                        :history       []
-                                        :history-index -1))
+                                     :mode          :normal
+                                     :seed          nil
+                                     :history       []
+                                     :history-index -1))
 
 (defvar evalator-state (copy-sequence evalator-state-default))
 (defvar evalator-map
@@ -24,8 +24,7 @@
 
 (defun evalator-state-init ()
   "Set state back to initial value."
-  (setq evalator-state (copy-sequence evalator-state-default)))
-
+ (setq evalator-state (copy-sequence evalator-state-default)))
 
 
 
@@ -43,8 +42,8 @@
 (defun evalator-history-push! (data)
   "Push the current source and expression onto history"
   (setq evalator-state (plist-put evalator-state :history
-                                     (vconcat (subseq (evalator-history) 0 (+ 1 (evalator-history-index)))
-                                              (list (list :source data :expression helm-pattern)))))
+                                  (vconcat (subseq (evalator-history) 0 (+ 1 (evalator-history-index)))
+                                           (list (list :source data :expression helm-pattern)))))
   (setq evalator-state (plist-put evalator-state :history-index (+ 1 (evalator-history-index)))))
 
 (defun evalator-history-current (&optional k)
@@ -57,10 +56,9 @@
   (let* ((source (evalator-history-current :source))
          (candidates (helm-get-candidates source))
          (f (lambda (candidates _) (evalator :candidates candidates
-                                                :initp      nil
-                                                :hist-pushp nil))))
+                                             :initp      nil
+                                             :hist-pushp nil))))
     (helm-exit-and-execute-action (apply-partially f candidates))))
-
 
 
 
@@ -91,8 +89,8 @@ transformation."
   (let ((source (evalator-history-current :source))
         (candidates (evalator-transform-candidates nil))
         (f (lambda (candidates _) (evalator :candidates candidates
-                                               :initp      nil
-                                               :hist-pushp t))))
+                                            :initp      nil
+                                            :hist-pushp t))))
     (helm-exit-and-execute-action (apply-partially f candidates))))
 
 
@@ -228,9 +226,9 @@ Tells helm lambda what mode to use.  Defaults to :normal."
 (defun evalator-explicit ()
   (interactive)
   (evalator :input      (prin1-to-string (read))
-               :initp      t
-               :hist-pushp t
-               :mode       :explicit))
+            :initp      t
+            :hist-pushp t
+            :mode       :explicit))
 
 (provide 'evalator)
 
