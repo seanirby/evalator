@@ -104,6 +104,9 @@ transformation."
 
 ;; Other
 
+(defun evalator-get-input ()
+  (read-from-minibuffer "Enter initial data:"))
+
 (defun evalator-thing-before-point (&optional limits regexp)
   "TEMP"
   (save-excursion
@@ -209,7 +212,7 @@ Tells helm lambda what mode to use.  Defaults to :normal."
 
   (let* ((candidatesp (not (equal nil (plist-get o :candidates))))
          (input (when (not candidatesp)
-                  (or (plist-get o :input) (evalator-thing-before-point))))
+                  (or (plist-get o :input) (evalator-get-input) t)))
          (candidates (if candidatesp
                          (plist-get o :candidates)
                        (funcall (slot-value evalator-eval-context :make-candidates)
@@ -230,7 +233,7 @@ Tells helm lambda what mode to use.  Defaults to :normal."
 
 (defun evalator-explicit ()
   (interactive)
-  (evalator :input      (prin1-to-string (read))
+  (evalator :input      (evalator-get-input)
             :initp      t
             :hist-pushp t
             :mode       :explicit))
