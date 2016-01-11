@@ -3,13 +3,6 @@
 (require 'evalator-context)
 (require 'evalator-context-elisp)
 
-;; Vars
-
-(defvar evalator-special-arg #x394)
-
-
-
-
 ;; State
 
 (defvar evalator-state-default (list :eval-context  evalator-context-elisp
