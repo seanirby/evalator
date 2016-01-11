@@ -242,7 +242,20 @@ Tells helm lambda what mode to use.  Defaults to :normal."
 
 ;; Dev
 ;; TODO comment or remove these when development done
-(defun evalator-dev-reload ()
+(defun evalator-dev-reload-elisp ()
+  (interactive)
+  (let (
+        (elispel "evalator-context-elisp.el")
+        (evalatorel "evalator.el"))
+    (with-current-buffer elispel
+      (save-buffer)
+      (eval-buffer))
+    (with-current-buffer evalatorel
+      (save-buffer)
+      (eval-buffer))
+    (setq evalator-state (plist-put evalator-state :context evalator-context-elisp))))
+
+(defun evalator-dev-reload-cider ()
   (interactive)
   (let ((ciderclj "evalator-context-cider.clj")
         (ciderel "evalator-context-cider.el")
@@ -257,10 +270,7 @@ Tells helm lambda what mode to use.  Defaults to :normal."
     (with-current-buffer ciderel
       (save-buffer)
       (eval-buffer))
-    (setq evalator-history '())
-    (setq evalator-history-index -1)
-    (setq evalator-eval-context evalator-context-cider)
-    (setq evalator-eval-context evalator-context-cider)))
+    (setq evalator-state (plist-put evalator-state :context evalator-context-cider))))
 
 (defun evalator-dev ()
   (interactive)
