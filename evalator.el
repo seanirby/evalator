@@ -5,7 +5,7 @@
 
 ;; State
 
-(defvar evalator-state-default (list :eval-context  evalator-context-elisp
+(defvar evalator-state-default (list :context       evalator-context-elisp
                                      :mode          :normal
                                      :seed          nil
                                      :history       []
@@ -150,7 +150,7 @@ candidates."
 should-try flag is non-nil then the 'transform-candidates-try' flag is
 called.  Otherwise, the 'transform-candidates function is called."
   (let* ((keyword (if should-try :transform-candidates-try :transform-candidates))
-         (transform-func (slot-value evalator-eval-context keyword)))
+         (transform-func (slot-value (plist-get evalator-state :context) keyword)))
     (funcall
      transform-func
      (helm-get-candidates (evalator-history-current :source))
@@ -208,14 +208,14 @@ Tells helm lambda what mode to use.  Defaults to :normal."
     (evalator-state-init)
     (when (plist-get o :mode)
       (setq evalator-state (plist-put evalator-state :mode (plist-get o :mode))))
-    (funcall (slot-value evalator-eval-context :init)))
+    (funcall (slot-value (plist-get evalator-state :context) :init)))
 
   (let* ((candidatesp (not (equal nil (plist-get o :candidates))))
          (input (when (not candidatesp)
                   (or (plist-get o :input) (evalator-get-input) t)))
          (candidates (if candidatesp
                          (plist-get o :candidates)
-                       (funcall (slot-value evalator-eval-context :make-candidates)
+                       (funcall (slot-value (plist-get evalator-state :context) :make-candidates)
                                 input
                                 (plist-get evalator-state :mode))))
          (source (evalator-build-source candidates (plist-get evalator-state :mode))))
