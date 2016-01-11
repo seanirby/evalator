@@ -59,7 +59,7 @@
     (if k (plist-get h k) h)))
 
 (defun evalator-history-load ()
-  "Quits the current helm session and loads a new one."
+  "Quits the current evalator session and loads a new one."
   (let* ((source (evalator-history-current :source))
          (candidates (helm-get-candidates source))
          (f (lambda (candidates _) (evalator :candidates candidates
@@ -73,17 +73,17 @@
 ;; Key Actions
 
 ;; TODO There's currently a weird bug happening where spamming the history next
-;; and previous actions will cause the helm session to shut down. Has to do with
+;; and previous actions will cause the evalator session to shut down. Has to do with
 ;; let bindings being nested too deep.
 (defun evalator-history-previous ()
-  "Go to the next history state and update the helm session."
+  "Go to the next history state and update the evalator session."
   (interactive)
   (when (not (equal 0 (evalator-history-index)))
     (setq evalator-state (plist-put evalator-state :history-index (+ -1 (evalator-history-index))))
     (evalator-history-load)))
 
 (defun evalator-history-next ()
-  "Go to the previous history state and update the helm session."
+  "Go to the previous history state and update the evalator session."
   (interactive)
   (when (not (equal (+ -1 (length (evalator-history))) (evalator-history-index)))
     (setq evalator-state (plist-put evalator-state :history-index (+ 1 (evalator-history-index))))
@@ -130,7 +130,7 @@ if no candidates were marked."
       candidates)))
 
 (defun evalator-build-source (candidates mode)
-  "Builds the source for a helm lambda session.  Accepts a list of
+  "Builds the source for a evalator session.  Accepts a list of
 candidates."
   (helm-build-sync-source (concat "Evaluation Result" (when (equal :explicit mode) "(Explicit)"))
     :volatile t
