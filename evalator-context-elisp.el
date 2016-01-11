@@ -18,7 +18,7 @@ their proper value."
                          (cond ((equal (symbol-name x) evalator-context-special-arg-default)
                                 (quote-if-list c))
                                
-                               ((string-match (make-regex) (symbol-name x))
+                               ((string-match (rgx) (symbol-name x))
                                 (quote-if-list (get-elt x)))
                                
                                (t
