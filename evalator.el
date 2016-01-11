@@ -3,6 +3,12 @@
 (require 'evalator-context)
 (require 'evalator-context-elisp)
 
+;; Vars
+
+(defvar evalator-special-arg #x394)
+
+
+
 
 ;; State
 
@@ -20,6 +26,7 @@
     (define-key map (kbd "C-u") 'evalator-confirm-application)
     (define-key map (kbd "C-j") 'evalator-history-next)
     (define-key map (kbd "C-l") 'evalator-history-previous)
+    (define-key map (kbd "C-i") 'evalator-insert-special-arg)
     map))
 
 (defun evalator-state-init ()
@@ -92,6 +99,10 @@ transformation."
                                             :initp      nil
                                             :hist-pushp t))))
     (helm-exit-and-execute-action (apply-partially f candidates))))
+
+(defun evalator-insert-special-arg ()
+  (interactive)
+  (insert evalator-special-arg))
 
 
 
