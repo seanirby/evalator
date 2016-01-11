@@ -14,7 +14,6 @@ their proper value."
                        (quote-if-list (elt c (string-to-number (subseq (symbol-name sym) 1)))))
               
               (subst (x)
-                     (my-sp x)
                      (if (symbolp x)
                          (cond ((equal (symbol-name x) evalator-context-special-arg-default)
                                 (quote-if-list c))
@@ -35,7 +34,6 @@ their proper value."
   (let* ((data (if not-initialp input (eval (read input))))
          (to-obj-string (lambda (x)
                           (prin1-to-string x))))
-    (my-sp (funcall to-obj-string data))
     (cond
      ((equal :explicit mode) (if not-initialp
                                  (list (funcall to-obj-string (car data)))
@@ -67,7 +65,6 @@ their proper value."
 
 (defun evalator-context-elisp-apply-expression (expr x)
   (let ((new-expr (evalator-context-elisp-substitute-special-args expr x)))
-    (my-sp new-expr)
     (eval new-expr)))
 
 ;; TODO kinda confused on the difference between defvar and setq, figure this out.
