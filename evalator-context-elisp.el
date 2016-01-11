@@ -62,18 +62,6 @@
     (my-sp new-expr)
     (eval new-expr)))
 
-(defun evalator-context-elisp-apply-expression2 (expression-str x)
-  (let ((expression (read expression-str)))
-    (if (and (sequencep x) (not (stringp x)))
-        (let* ((xs (mapcar 'read x))
-               (ns (number-sequence 0 (1- (length xs))))
-               (arg-names (mapcar (lambda (n) (intern (concat "%" (int-to-string n)))) ns))
-               (% xs)
-               (f `(lambda ,arg-names ,expression)))
-          (apply (eval f) (append xs nil)))
-      (let* ((% (read x)))
-        (eval expression)))))
-
 ;; TODO kinda confused on the difference between defvar and setq, figure this out.
 (setq evalator-context-elisp
       (make-instance
