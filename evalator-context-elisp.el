@@ -1,22 +1,30 @@
 (require 'evalator-context)
 (require 'eieio)
 
-(defun evalator-context-elisp-substitute-special-args (expr x)
-  "Walks through the form expr and replaces any special args with their proper value."
-  (cl-labels ((quote-if-list (x)
+(defun evalator-context-elisp-substitute-special-args (expr c)
+  "Walks through the expression and replaces any special args with
+their proper value."
+  (cl-labels ((rgx ()
+                   (format "%s[0-9]*" evalator-context-special-arg-default))
+              
+              (quote-if-list (x)
                              (if (consp x) (quote x) x))
+              
               (get-elt (sym)
-                       (quote-if-list (elt x (string-to-number (subseq (symbol-name sym) 1)))))
-              (subst (sym)
-                     (cond ((equal sym '%)
-                            (quote-if-list x))
-                           
-                           ((and (symbolp sym)
-                                 (string-match "%[0-9]*" (symbol-name sym)))
-                            (quote-if-list (get-elt sym)))
-                           
-                           (t
-                            sym)))
+                       (quote-if-list (elt c (string-to-number (subseq (symbol-name sym) 1)))))
+              
+              (subst (x)
+                     (my-sp x)
+                     (if (symbolp x)
+                         (cond ((equal (symbol-name x) evalator-context-special-arg-default)
+                                (quote-if-list c))
+                               
+                               ((string-match (make-regex) (symbol-name x))
+                                (quote-if-list (get-elt x)))
+                               
+                               (t
+                                x))
+                       x))
               (rec (xs)
                    (cond ((equal nil (car xs)) nil)
                          ((consp (car xs)) (cons (rec (car xs)) (rec (cdr xs))))

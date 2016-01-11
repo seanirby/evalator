@@ -102,7 +102,8 @@ transformation."
 
 (defun evalator-insert-special-arg ()
   (interactive)
-  (insert evalator-special-arg))
+  ;; Need to get this from context instead
+  (insert evalator-context-special-arg-default))
 
 
 
