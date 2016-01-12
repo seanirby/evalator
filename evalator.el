@@ -52,7 +52,6 @@
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map helm-map)
     (define-key map (kbd "RET") 'evalator-confirm-application)
-    (define-key map (kbd "C-u") 'evalator-confirm-application)
     (define-key map (kbd "C-j") 'evalator-history-next)
     (define-key map (kbd "C-l") 'evalator-history-previous)
     (define-key map (kbd "C-i") 'evalator-insert-special-arg)
