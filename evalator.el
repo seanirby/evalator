@@ -147,9 +147,6 @@ transformation."
       (face-remap-add-relative 'minibuffer-prompt f))))
 
 
-(defun evalator-get-input ()
-  (read-from-minibuffer "Enter initial data:"))
-
 (defun evalator-thing-before-point (&optional limits regexp)
   "TEMP"
   (save-excursion
@@ -193,15 +190,22 @@ candidates."
 should-try flag is non-nil then the 'transform-candidates-try' flag is
 called.  Otherwise, the 'transform-candidates function is called."
   (let* ((candidates-all (helm-get-candidates (evalator-history-current :source)))
+         (make-candidates (slot-value (plist-get evalator-state :context) :make-candidates))
          (transform (slot-value (plist-get evalator-state :context) :transform-candidates)))
     (condition-case err
         (progn (evalator-flash :success)
-               (funcall
-                transform
-                candidates-all
-                (evalator-marked-candidates)
-                helm-pattern
-                (plist-get evalator-state :mode)))
+               (if (equal 0 (evalator-history-index))
+                   (progn (setq evalator-state (plist-put evalator-state :seed helm-pattern))
+                          (funcall
+                           make-candidates
+                           helm-pattern
+                           (plist-get evalator-state :mode)))
+                 (funcall
+                  transform
+                  candidates-all
+                  (evalator-marked-candidates)
+                  helm-pattern
+                  (plist-get evalator-state :mode))))
       (error
        (if err-handler
            (funcall err-handler)
@@ -219,11 +223,15 @@ called.  Otherwise, the 'transform-candidates function is called."
 session.  NOTE: Session must have been run with 'evalator-explicit'
 for this to work."
   (interactive)
-  (let ((exprs (cons (plist-get evalator-state :seed)
-                     (cdr (mapcar (lambda (h)
-                                    (plist-get h :expression)) (plist-get evalator-state :history))))))
+  (let* ((exprs (cdr (mapcar
+                       (lambda (h)
+                         (plist-get h :expression))
+                       (plist-get evalator-state :history)))))
     (with-current-buffer
-        (insert (reduce (lambda (e1 e2) (replace-regexp-in-string "%" e1 e2)) exprs)))))
+        (insert (reduce
+                 (lambda (e1 e2)
+                   (replace-regexp-in-string evalator-context-special-arg-default e1 e2 t))
+                 exprs)))))
 
 (defun evalator-resume ()
   "Resumes last evalator session."
@@ -262,18 +270,10 @@ Tells helm lambda what mode to use.  Defaults to :normal."
   
   (let* ((helm-mode-line-string "")
          (candidatesp (not (equal nil (plist-get o :candidates))))
-         (input (when (not candidatesp)
-                  (or (plist-get o :input) (evalator-get-input) t)))
          (candidates (if candidatesp
                          (plist-get o :candidates)
-                       (funcall (slot-value (plist-get evalator-state :context) :make-candidates)
-                                input
-                                (plist-get evalator-state :mode))))
+                       '("Enter an expression below to generate initial data")))
          (source (evalator-build-source candidates (plist-get evalator-state :mode))))
-    
-    ;; Remember initial input so an equivalent expression can be created later
-    (when (or (called-interactively-p 'any) (plist-get o :initp))
-      (setq evalator-state (plist-put evalator-state :seed input)))
     
     (when (or (called-interactively-p 'any) (plist-get o :hist-pushp))
       (evalator-history-push! source))
@@ -284,8 +284,7 @@ Tells helm lambda what mode to use.  Defaults to :normal."
 
 (defun evalator-explicit ()
   (interactive)
-  (evalator :input      (evalator-get-input)
-            :initp      t
+  (evalator :initp      t
             :hist-pushp t
             :mode       :explicit))
 
