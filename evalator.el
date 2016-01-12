@@ -60,7 +60,7 @@
 
 (defun evalator-state-init ()
   "Set state back to initial value."
- (setq evalator-state (copy-sequence evalator-state-default)))
+  (setq evalator-state (copy-sequence evalator-state-default)))
 
 
 
@@ -255,8 +255,7 @@ Tells helm lambda what mode to use.  Defaults to :normal."
     (when (plist-get o :mode)
       (setq evalator-state (plist-put evalator-state :mode (plist-get o :mode))))
     (funcall (slot-value (plist-get evalator-state :context) :init)))
-
-  (let* ((candidatesp (not (equal nil (plist-get o :candidates))))
+  
   (let* ((helm-mode-line-string "")
          (candidatesp (not (equal nil (plist-get o :candidates))))
          (input (when (not candidatesp)
