@@ -1,6 +1,6 @@
 (require 'eieio)
 
-(defvar evalator-context-special-arg-default "Δ") ;; x394
+(defvar evalator-context-special-arg-default "Ⓔ") ;; x24ba
 
 ;; References to data types in the docstrings below are assumed to be elisp types.
 (defclass evalator-context ()
