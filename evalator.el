@@ -297,9 +297,12 @@ Tells helm lambda what mode to use.  Defaults to :normal."
 ;; TODO comment or remove these when development done
 (defun evalator-dev-reload-elisp ()
   (interactive)
-  (let (
+  (let ((contextel "evalator-context.el")
         (elispel "evalator-context-elisp.el")
         (evalatorel "evalator.el"))
+    (with-current-buffer contextel
+      (save-buffer)
+      (eval-buffer))
     (with-current-buffer elispel
       (save-buffer)
       (eval-buffer))
