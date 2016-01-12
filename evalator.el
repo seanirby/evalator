@@ -165,6 +165,9 @@ if no candidates were marked."
                     finally return cands)))
       candidates)))
 
+(defun evalator-persistent-help ()
+  "History forward, C-l: History backward, RETURN: Accept transformation, C-i: Insert special arg")
+
 (defun evalator-build-source (candidates mode)
   "Builds the source for a evalator session.  Accepts a list of
 candidates."
@@ -176,6 +179,7 @@ candidates."
     :keymap evalator-map
     :nohighlight t
     :nomark (equal :explicit mode)
+    :persistent-help (evalator-persistent-help)
     :volatile t))
 
 
