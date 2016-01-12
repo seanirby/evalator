@@ -122,15 +122,14 @@
   "Accepts results and starts a new evalator for further
 transformation."
   (interactive)
-  (let ((err-handler (lambda ()
-                       (with-current-buffer "*evalator*"
-                         (message "Can't update, invalid expression")
-                         nil)))
-        (source (evalator-history-current :source))
-        (candidates (evalator-transform-candidates err-handler))
-        (f (lambda (candidates _) (evalator :candidates candidates
-                                            :initp      nil
-                                            :hist-pushp t))))
+  (let* ((err-handler (lambda ()
+                        (with-current-buffer "*evalator*"
+                          (message "Can't update, invalid expression")
+                          nil)))
+         (candidates (evalator-transform-candidates err-handler))
+         (f (lambda (candidates _) (evalator :candidates candidates
+                                             :initp      nil
+                                             :hist-pushp t))))
     (when candidates
       (helm-exit-and-execute-action (apply-partially f candidates)))))
 
