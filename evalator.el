@@ -172,7 +172,6 @@ candidates."
     :volatile t
     :candidates candidates
     :filtered-candidate-transformer (lambda (_candidates _source)
-                                      ;; TODO might be possible to move condition-case to this level
                                       (with-helm-current-buffer
                                         (evalator-transform-candidates)))
     :keymap evalator-map
