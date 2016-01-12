@@ -169,14 +169,14 @@ if no candidates were marked."
   "Builds the source for a evalator session.  Accepts a list of
 candidates."
   (helm-build-sync-source (concat "Evaluation Result" (when (equal :explicit mode) "(Explicit)"))
-    :volatile t
     :candidates candidates
     :filtered-candidate-transformer (lambda (_candidates _source)
                                       (with-helm-current-buffer
                                         (evalator-transform-candidates)))
     :keymap evalator-map
     :nohighlight t
-    :nomark (equal :explicit mode)))
+    :nomark (equal :explicit mode)
+    :volatile t))
 
 
 
