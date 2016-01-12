@@ -122,12 +122,17 @@
   "Accepts results and starts a new evalator for further
 transformation."
   (interactive)
-  (let ((source (evalator-history-current :source))
-        (candidates (evalator-transform-candidates nil))
+  (let ((err-handler (lambda ()
+                       (with-current-buffer "*evalator*"
+                         (message "Can't update, invalid expression")
+                         nil)))
+        (source (evalator-history-current :source))
+        (candidates (evalator-transform-candidates err-handler))
         (f (lambda (candidates _) (evalator :candidates candidates
                                             :initp      nil
                                             :hist-pushp t))))
-    (helm-exit-and-execute-action (apply-partially f candidates))))
+    (when candidates
+      (helm-exit-and-execute-action (apply-partially f candidates)))))
 
 (defun evalator-insert-special-arg ()
   (interactive)
@@ -174,7 +179,7 @@ candidates."
     :filtered-candidate-transformer (lambda (_candidates _source)
                                       ;; TODO might be possible to move condition-case to this level
                                       (with-helm-current-buffer
-                                        (evalator-transform-candidates t)))
+                                        (evalator-transform-candidates)))
     :keymap evalator-map
     :nohighlight t
     :nomark (equal :explicit mode)))
@@ -185,25 +190,26 @@ candidates."
 
 ;; Context evaluation
 
-(defun evalator-transform-candidates (should-try)
+(defun evalator-transform-candidates (&optional err-handler)
   "Call the evaluation contexts transform candidates function.  If the
 should-try flag is non-nil then the 'transform-candidates-try' flag is
 called.  Otherwise, the 'transform-candidates function is called."
   (let* ((candidates-all (helm-get-candidates (evalator-history-current :source)))
-         (keyword :transform-candidates)
-         (transform-func (slot-value (plist-get evalator-state :context) keyword)))
+         (transform (slot-value (plist-get evalator-state :context) :transform-candidates)))
     (condition-case err
         (progn (evalator-flash :success)
                (funcall
-                transform-func
+                transform
                 candidates-all
                 (evalator-marked-candidates)
                 helm-pattern
                 (plist-get evalator-state :mode)))
       (error
-       (progn
-         (evalator-flash :error)
-         candidates-all)))))
+       (if err-handler
+           (funcall err-handler)
+         (progn
+           (evalator-flash :error)
+           candidates-all))))))
 
 
 
