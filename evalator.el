@@ -257,6 +257,8 @@ Tells helm lambda what mode to use.  Defaults to :normal."
     (funcall (slot-value (plist-get evalator-state :context) :init)))
 
   (let* ((candidatesp (not (equal nil (plist-get o :candidates))))
+  (let* ((helm-mode-line-string "")
+         (candidatesp (not (equal nil (plist-get o :candidates))))
          (input (when (not candidatesp)
                   (or (plist-get o :input) (evalator-get-input) t)))
          (candidates (if candidatesp
