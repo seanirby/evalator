@@ -227,9 +227,9 @@ session.  NOTE: Session must have been run with 'evalator-explicit'
 for this to work."
   (interactive)
   (let* ((exprs (cdr (mapcar
-                       (lambda (h)
-                         (plist-get h :expression))
-                       (plist-get evalator-state :history)))))
+                      (lambda (h)
+                        (plist-get h :expression))
+                      (plist-get evalator-state :history)))))
     (with-current-buffer
         (insert (reduce
                  (lambda (e1 e2)
