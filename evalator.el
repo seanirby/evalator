@@ -54,7 +54,7 @@
     (define-key map (kbd "RET") 'evalator-confirm-application)
     (define-key map (kbd "C-j") 'evalator-history-next)
     (define-key map (kbd "C-l") 'evalator-history-previous)
-    (define-key map (kbd "C-i") 'evalator-insert-special-arg)
+    (define-key map (kbd "C-;") 'evalator-insert-special-arg)
     map))
 
 (defun evalator-state-init ()
@@ -166,7 +166,13 @@ if no candidates were marked."
       candidates)))
 
 (defun evalator-persistent-help ()
-  "History forward, C-l: History backward, RETURN: Accept transformation, C-i: Insert special arg")
+  (cl-flet ((f (command)
+            (key-description (where-is-internal command evalator-map t))))
+    (concat "History forward, "
+            (f 'evalator-history-previous)    ": History backward, "
+            (f 'evalator-confirm-application) ": Accept transformation, "
+            (f 'evalator-insert-special-arg)  ": Insert special arg")))
+
 
 (defun evalator-build-source (candidates mode)
   "Builds the source for a evalator session.  Accepts a list of
