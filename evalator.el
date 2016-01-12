@@ -189,15 +189,21 @@ candidates."
   "Call the evaluation contexts transform candidates function.  If the
 should-try flag is non-nil then the 'transform-candidates-try' flag is
 called.  Otherwise, the 'transform-candidates function is called."
-  (let* ((keyword (if should-try :transform-candidates-try :transform-candidates))
+  (let* ((candidates-all (helm-get-candidates (evalator-history-current :source)))
+         (keyword :transform-candidates)
          (transform-func (slot-value (plist-get evalator-state :context) keyword)))
-    (funcall
-     transform-func
-     (helm-get-candidates (evalator-history-current :source))
-     (evalator-marked-candidates)
-     helm-pattern
-     (plist-get evalator-state :mode))))
-
+    (condition-case err
+        (progn (evalator-flash :success)
+               (funcall
+                transform-func
+                candidates-all
+                (evalator-marked-candidates)
+                helm-pattern
+                (plist-get evalator-state :mode)))
+      (error
+       (progn
+         (evalator-flash :error)
+         candidates-all)))))
 
 
 

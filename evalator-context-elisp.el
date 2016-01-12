@@ -41,16 +41,6 @@ their proper value."
      ((and (not (stringp data)) (sequencep data)) (mapcar to-obj-string data))
      (t (list (funcall to-obj-string data))))))
 
-(defun evalator-context-elisp-transform-candidates-try (candidates-all candidates-marked expr-str mode)
-  (condition-case err
-      (evalator-context-elisp-transform-candidates candidates-all
-                                                   candidates-marked
-                                                   expr-str
-                                                   mode)
-    (error
-     ;; TODO Would be useful to have a red/green flash for this
-     candidates-all)))
-
 (defun evalator-context-elisp-transform-candidates (candidates-all candidates-marked expr-str mode)
   (evalator-context-elisp-make-candidates
    (if (equal nil candidates-marked)
@@ -80,10 +70,6 @@ their proper value."
 
        :make-candidates
        'evalator-context-elisp-make-candidates
-       
-
-       :transform-candidates-try
-       'evalator-context-elisp-transform-candidates-try
        
 
        :transform-candidates
