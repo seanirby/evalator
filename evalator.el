@@ -3,6 +3,42 @@
 (require 'evalator-context)
 (require 'evalator-context-elisp)
 
+;; Faces
+
+(defgroup evalator-faces nil
+  "Customize the appearance of evalator."
+  :prefix "evalator-"
+  :group 'faces
+  :group 'evalator)
+
+(defface evalator-success
+  '((((background dark))
+     :background "green4"
+     :foreground "white"
+     )
+    (((background light))
+     :background "green4"
+     :foreground "white"
+     ))
+  "Face for source header in the evalator buffer."
+  :group 'evalator-faces)
+
+(defface evalator-error
+  '((((background dark))
+     :background "red4"
+     :foreground "white"
+     )
+    (((background light))
+     :background "red4"
+     :foreground "white"
+     ))
+  "Face for source header in the evalator buffer."
+  :group 'evalator-faces)
+
+
+
+
+
 ;; State
 
 (defvar evalator-state-default (list :context       evalator-context-elisp
@@ -100,9 +136,13 @@ transformation."
 
 
 
-
-
 ;; Other
+
+(defun evalator-flash (status)
+  (let ((f (if (equal :success status) 'evalator-success 'evalator-error)))
+    (with-current-buffer (window-buffer (active-minibuffer-window))
+      (face-remap-add-relative 'minibuffer-prompt f))))
+
 
 (defun evalator-get-input ()
   (read-from-minibuffer "Enter initial data:"))
