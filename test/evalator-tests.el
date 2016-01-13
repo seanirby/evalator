@@ -30,14 +30,15 @@ arguments.  Tests that a failing confirmation returns nil and outputs
 an error message."
   (flet ((evalator (&rest args) args)
          (helm-exit-and-execute-action (f) (funcall f nil)))
-    (flet ((evalator-transform-candidates (_) '("foo" "bar" "baz")))
+    (flet ((evalator-transform-candidates (&rest _) '("foo" "bar" "baz")))
       (should (equal (list :candidates '("foo" "bar" "baz")
                            :initp      nil
                            :hist-pushp t)
                      (evalator-action-confirm))))
     (flet ((message (_)
                     (insert "Dummy Error Message"))
-           (evalator-transform-candidates (err-handler) (funcall err-handler)))
+           ;; Call error handler
+           (evalator-transform-candidates (&rest args) (funcall (car (last args)))))
       (with-temp-buffer
         (should (equal nil (evalator-action-confirm)))
         (should (equal "Dummy Error Message" (buffer-string)))))))

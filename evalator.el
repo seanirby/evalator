@@ -28,10 +28,14 @@
 transformation."
   (interactive)
   (let* ((err-handler (lambda ()
-                        (with-current-buffer "*evalator*"
-                          (message "Can't update, invalid expression")
-                          nil)))
-         (candidates (evalator-transform-candidates err-handler))
+                        (message "Can't update, invalid expression")
+                        nil))
+         (candidates (evalator-transform-candidates
+                      helm-pattern
+                      (plist-get evalator-state :mode)
+                      (slot-value (plist-get evalator-state :context) :make-candidates)
+                      (slot-value (plist-get evalator-state :context) :transform-candidates)
+                      err-handler))
          (f (lambda (candidates _) (evalator :candidates candidates
                                              :initp      nil
                                              :hist-pushp t))))
@@ -89,40 +93,32 @@ candidates."
     :candidates candidates
     :filtered-candidate-transformer (lambda (_candidates _source)
                                       (with-helm-current-buffer
-                                        (evalator-transform-candidates)))
+                                        (evalator-transform-candidates
+                                         helm-pattern
+                                         (plist-get evalator-state :mode)
+                                         (slot-value (plist-get evalator-state :context) :make-candidates)
+                                         (slot-value (plist-get evalator-state :context) :transform-candidates))))
     :keymap evalator-key-map
     :nohighlight t
     :nomark (equal :explicit mode)
     :persistent-help (evalator-persistent-help)
     :volatile t))
 
-(defun evalator-transform-candidates (&optional err-handler)
-  "Call the evaluation contexts transform candidates function.  If the
-should-try flag is non-nil then the 'transform-candidates-try' flag is
-called.  Otherwise, the 'transform-candidates function is called."
-  (let* ((candidates-all (helm-get-candidates (evalator-history-current :source)))
-         (make-candidates (slot-value (plist-get evalator-state :context) :make-candidates))
-         (transform (slot-value (plist-get evalator-state :context) :transform-candidates)))
+(defun evalator-transform-candidates (expr mode make-f transform-f &optional err-handler)
+  ""
+  (let ((cands-all (helm-get-candidates (helm-get-current-source)))
+        (cands-marked (evalator-marked-candidates)))
     (condition-case err
         (progn (evalator-flash :success)
                (if (equal 0 (evalator-history-index))
-                   (progn (evalator-utils-put! evalator-state :seed helm-pattern)
-                          (funcall
-                           make-candidates
-                           helm-pattern
-                           (plist-get evalator-state :mode)))
-                 (funcall
-                  transform
-                  candidates-all
-                  (evalator-marked-candidates)
-                  helm-pattern
-                  (plist-get evalator-state :mode))))
+                   (progn (funcall make-f expr mode))
+                 (funcall transform-f cands-all cands-marked expr mode)))
       (error
        (if err-handler
            (funcall err-handler)
          (progn
            (evalator-flash :error)
-           candidates-all))))))
+           cands-all))))))
 
 (defun evalator-insert-last-equiv-expr ()
   "Inserts the equivalent expression of the previous evalator
