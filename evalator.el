@@ -1,151 +1,16 @@
-(require 'helm)
 (require 'cl-lib)
 (require 'evalator-context)
-(require 'evalator-context-elisp)
-
-;; Faces
-
-(defgroup evalator-faces nil
-  "Customize the appearance of evalator."
-  :prefix "evalator-"
-  :group 'faces
-  :group 'evalator)
-
-(defface evalator-success
-  '((((background dark))
-     :background "green4"
-     :foreground "white"
-     )
-    (((background light))
-     :background "green4"
-     :foreground "white"
-     ))
-  "Face for source header in the evalator buffer."
-  :group 'evalator-faces)
-
-(defface evalator-error
-  '((((background dark))
-     :background "red4"
-     :foreground "white"
-     )
-    (((background light))
-     :background "red4"
-     :foreground "white"
-     ))
-  "Face for source header in the evalator buffer."
-  :group 'evalator-faces)
-
-
-
-
-
-;; State
-
-(defvar evalator-state-default (list :context       evalator-context-elisp
-                                     :mode          :normal
-                                     :seed          nil
-                                     :history       []
-                                     :history-index -1))
-
-(defvar evalator-state (copy-sequence evalator-state-default))
-(defvar evalator-map
-  (let ((map (make-sparse-keymap)))
-    (set-keymap-parent map helm-map)
-    (define-key map (kbd "RET") 'evalator-confirm-application)
-    (define-key map (kbd "C-j") 'evalator-history-next)
-    (define-key map (kbd "C-l") 'evalator-history-previous)
-    (define-key map (kbd "C-;") 'evalator-insert-special-arg)
-    map))
-
-(defun evalator-state-init ()
-  "Set state back to initial value."
-  (setq evalator-state (copy-sequence evalator-state-default)))
-
-
-
-
-;; History
-
-(defun evalator-history ()
-  "Return history"
-  (plist-get evalator-state :history))
-
-(defun evalator-history-index ()
-  "Return current history index"
-  (plist-get evalator-state :history-index))
-
-(defun evalator-history-push! (data)
-  "Push the current source and expression onto history"
-  (setq evalator-state (plist-put evalator-state :history
-                                  (vconcat (subseq (evalator-history) 0 (+ 1 (evalator-history-index)))
-                                           (list (list :source data :expression helm-pattern)))))
-  (setq evalator-state (plist-put evalator-state :history-index (+ 1 (evalator-history-index)))))
-
-(defun evalator-history-current (&optional k)
-  "Retrieve active history element.  Accepts an optional key."
-  (let ((h (elt (evalator-history) (evalator-history-index))))
-    (if k (plist-get h k) h)))
-
-(defun evalator-history-load ()
-  "Quits the current evalator session and loads a new one."
-  (let* ((source (evalator-history-current :source))
-         (candidates (helm-get-candidates source))
-         (f (lambda (candidates _) (evalator :candidates candidates
-                                             :initp      nil
-                                             :hist-pushp nil))))
-    (helm-exit-and-execute-action (apply-partially f candidates))))
-
-
-
-
-;; Key Actions
-
-;; TODO There's currently a weird bug happening where spamming the history next
-;; and previous actions will cause the evalator session to shut down. Has to do with
-;; let bindings being nested too deep.
-(defun evalator-history-previous ()
-  "Go to the next history state and update the evalator session."
-  (interactive)
-  (when (not (equal 0 (evalator-history-index)))
-    (setq evalator-state (plist-put evalator-state :history-index (+ -1 (evalator-history-index))))
-    (evalator-history-load)))
-
-(defun evalator-history-next ()
-  "Go to the previous history state and update the evalator session."
-  (interactive)
-  (when (not (equal (+ -1 (length (evalator-history))) (evalator-history-index)))
-    (setq evalator-state (plist-put evalator-state :history-index (+ 1 (evalator-history-index))))
-    (evalator-history-load)))
-
-(defun evalator-confirm-application ()
-  "Accepts results and starts a new evalator for further
-transformation."
-  (interactive)
-  (let* ((err-handler (lambda ()
-                        (with-current-buffer "*evalator*"
-                          (message "Can't update, invalid expression")
-                          nil)))
-         (candidates (evalator-transform-candidates err-handler))
-         (f (lambda (candidates _) (evalator :candidates candidates
-                                             :initp      nil
-                                             :hist-pushp t))))
-    (when candidates
-      (helm-exit-and-execute-action (apply-partially f candidates)))))
-
-(defun evalator-insert-special-arg ()
-  (interactive)
-  ;; Need to get this from context instead
-  (insert evalator-context-special-arg-default))
-
-
-
-;; Other
+(require 'evalator-faces)
+(require 'evalator-history)
+(require 'evalator-action)
+(require 'evalator-key-map)
+(require 'evalator-state)
+(require 'helm)
 
 (defun evalator-flash (status)
   (let ((f (if (equal :success status) 'evalator-success 'evalator-error)))
     (with-current-buffer (window-buffer (active-minibuffer-window))
       (face-remap-add-relative 'minibuffer-prompt f))))
-
 
 (defun evalator-thing-before-point (&optional limits regexp)
   "TEMP"
@@ -167,12 +32,11 @@ if no candidates were marked."
 
 (defun evalator-persistent-help ()
   (cl-flet ((f (command)
-            (key-description (where-is-internal command evalator-map t))))
+            (key-description (where-is-internal command evalator-key-map t))))
     (concat "History forward, "
-            (f 'evalator-history-previous)    ": History backward, "
-            (f 'evalator-confirm-application) ": Accept transformation, "
-            (f 'evalator-insert-special-arg)  ": Insert special arg")))
-
+            (f 'evalator-action-previous)    ": History backward, "
+            (f 'evalator-action-confirm) ": Accept transformation, "
+            (f 'evalator-action-insert)  ": Insert special arg")))
 
 (defun evalator-build-source (candidates mode)
   "Builds the source for a evalator session.  Accepts a list of
@@ -182,17 +46,11 @@ candidates."
     :filtered-candidate-transformer (lambda (_candidates _source)
                                       (with-helm-current-buffer
                                         (evalator-transform-candidates)))
-    :keymap evalator-map
+    :keymap evalator-key-map
     :nohighlight t
     :nomark (equal :explicit mode)
     :persistent-help (evalator-persistent-help)
     :volatile t))
-
-
-
-
-
-;; Context evaluation
 
 (defun evalator-transform-candidates (&optional err-handler)
   "Call the evaluation contexts transform candidates function.  If the
@@ -221,11 +79,6 @@ called.  Otherwise, the 'transform-candidates function is called."
          (progn
            (evalator-flash :error)
            candidates-all))))))
-
-
-
-
-;; User functions
 
 (defun evalator-insert-last-equiv-expr ()
   "Inserts the equivalent expression of the previous evalator
@@ -301,41 +154,41 @@ Tells helm lambda what mode to use.  Defaults to :normal."
 
 ;; Dev
 ;; TODO comment or remove these when development done
-(defun evalator-dev-reload-elisp ()
-  (interactive)
-  (let ((contextel "evalator-context.el")
-        (elispel "evalator-context-elisp.el")
-        (evalatorel "evalator.el"))
-    (with-current-buffer contextel
-      (save-buffer)
-      (eval-buffer))
-    (with-current-buffer elispel
-      (save-buffer)
-      (eval-buffer))
-    (with-current-buffer evalatorel
-      (save-buffer)
-      (eval-buffer))
-    (setq evalator-state (plist-put evalator-state :context evalator-context-elisp))))
+;; (defun evalator-dev-reload-elisp ()
+;;   (interactive)
+;;   (let ((contextel "evalator-context.el")
+;;         (elispel "evalator-context-elisp.el")
+;;         (evalatorel "evalator.el"))
+;;     (with-current-buffer contextel
+;;       (save-buffer)
+;;       (eval-buffer))
+;;     (with-current-buffer elispel
+;;       (save-buffer)
+;;       (eval-buffer))
+;;     (with-current-buffer evalatorel
+;;       (save-buffer)
+;;       (eval-buffer))
+;;     (setq evalator-state (plist-put evalator-state :context evalator-context-elisp))))
 
-(defun evalator-dev-reload-cider ()
-  (interactive)
-  (let ((ciderclj "evalator-context-cider.clj")
-        (ciderel "evalator-context-cider.el")
-        (testclj "test.clj")
-        (lambdael "evalator.el"))
-    (with-current-buffer ciderclj
-      (save-buffer)
-      (cider-eval-buffer))
-    (with-current-buffer testclj
-      (save-buffer)
-      (cider-eval-buffer))
-    (with-current-buffer ciderel
-      (save-buffer)
-      (eval-buffer))
-    (setq evalator-state (plist-put evalator-state :context evalator-context-cider))))
+;; (defun evalator-dev-reload-cider ()
+;;   (interactive)
+;;   (let ((ciderclj "evalator-context-cider.clj")
+;;         (ciderel "evalator-context-cider.el")
+;;         (testclj "test.clj")
+;;         (lambdael "evalator.el"))
+;;     (with-current-buffer ciderclj
+;;       (save-buffer)
+;;       (cider-eval-buffer))
+;;     (with-current-buffer testclj
+;;       (save-buffer)
+;;       (cider-eval-buffer))
+;;     (with-current-buffer ciderel
+;;       (save-buffer)
+;;       (eval-buffer))
+;;     (setq evalator-state (plist-put evalator-state :context evalator-context-cider))))
 
-(defun evalator-dev ()
-  (interactive)
-  (evalator-dev-reload)
-  (evalator :initp t :hist-pushp t))
+;; (defun evalator-dev ()
+;;   (interactive)
+;;   (evalator-dev-reload)
+;;   (evalator :initp t :hist-pushp t))
 
