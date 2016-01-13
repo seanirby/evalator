@@ -1,3 +1,4 @@
+(require 'evalator-utils)
 (require 'evalator-state)
 (require 'helm)
 
