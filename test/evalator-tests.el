@@ -50,3 +50,78 @@ an error message."
                    (with-temp-buffer
                      (evalator-action-insert-arg)
                      (buffer-string))))))
+
+;; TODO Not sure how to test this one yet
+(ert-deftest evalator-flash-test ()
+  "Tests that 'evalator-flash' changes the 'minibuffer-prompt' face"
+  )
+
+;; TODO Not sure how to test this one yet
+(ert-deftest evalator-marked-candidates ()
+  "Tests that 'evalator-marked-candidates' returns marked candidates
+or nil"
+  )
+
+(ert-deftest evalator-persistent-help-test ()
+  "Tests that 'evalator-persistent-help' builds persistent help
+string."
+  (let ((evalator-key-map (list 'evalator-action-previous   "C-l"
+                                'evalator-action-confirm    "RET"
+                                'evalator-action-insert-arg "C-;")))
+    (flet ((where-is-internal (command key-map _) (plist-get key-map command))
+           (key-description (str) str))
+      (should (equal (concat "History forward, "
+                             "C-l: History backward, "
+                             "RET: Accept transformation, "
+                             "C-;: Insert special arg")
+                     (evalator-persistent-help))))))
+
+;; Tried to mock the helm-build-sync-source macro but ran into issues
+;; This works for now...
+(ert-deftest evalator-build-source-test ()
+  "Tests that name of source is set correctly depending on the 'mode'
+argument passed to 'evalator-build-source'"
+  (let ((args-normal (evalator-build-source nil :normal))
+        (args-explicit (evalator-build-source nil :explicit)))
+    (should (equal "Evaluation Result"
+                   (cdr (assoc 'name args-normal))))
+    (should (equal "Evaluation Result(Explicit)"
+                   (cdr (assoc 'name args-explicit))))))
+
+(ert-deftest evalator-transform-candidates-test ()
+  ""
+  (let ((flash-status nil))
+    (flet ((helm-get-current-source () nil)
+           (helm-get-candidates (_) '("foo" "bar"))
+           (evalator-marked-candidates () nil)
+           (evalator-flash (status) (setq flash-status status)))
+      (let ((make-f (lambda (bad-expr _mode)
+                      (if bad-expr
+                          (eval (read bad-expr))
+                        "make-f-called")))
+            (transform-f (lambda (_cands-all _cands-marked bad-expr _mode)
+                           (if bad-expr
+                               (eval (read bad-expr))
+                             "transform-f-called"))))
+        (flet ((evalator-history-index () 0))
+          ;; make-f is called at index 0
+          (should (equal "make-f-called"
+                         (evalator-transform-candidates nil nil make-f transform-f)))
+          ;; Flash status is ':success' call succeeds
+          (should (equal :success flash-status))
+          ;; All candidates get returned on error
+          (should (equal '("foo" "bar")
+                         (evalator-transform-candidates "(list 1" nil make-f transform-f)))
+          ;; Flash status is ':error' when call fails
+          (should (equal :error flash-status)))
+        (flet ((evalator-history-index () 1))
+          ;; transform-f called otherwise
+          (should (equal "transform-f-called"
+                         (evalator-transform-candidates nil nil make-f transform-f)))
+          ;; Flash status is ':success' call succeeds
+          (should (equal :success flash-status))
+          ;; All candidates get returned on error
+          (should (equal '("foo" "bar")
+                         (evalator-transform-candidates "(list 1" nil make-f transform-f)))
+          ;; Flash status is ':error' when call fails
+          (should (equal :error flash-status)))))))
