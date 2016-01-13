@@ -30,12 +30,3 @@ and update state's index."
          (evalator-history-index () 1))
     (should (equal "bar"
                    (evalator-history-current)))))
-
-(ert-deftest evalator-history-load-test ()
-  "Tests that 'helm-exit-and-execute-action' is called with a callback to start a new evalator session whose candidates are the candidates in the current source in history."
-  (flet ((evalator-history-current (_) '(:candidates ("foo")))
-         (helm-get-candidates (source) (plist-get source :candidates))
-         (helm-exit-and-execute-action (f) (funcall f nil))
-         (evalator (&rest args) args))
-    (should (equal '(:candidates ("foo") :initp nil :hist-pushp nil)
-                   (evalator-history-load)))))

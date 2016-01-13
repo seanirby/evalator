@@ -24,13 +24,4 @@ index."
   (let ((h (elt (evalator-history) (evalator-history-index))))
     (if k (plist-get h k) h)))
 
-(defun evalator-history-load ()
-  "Quits the current evalator session and loads a new one."
-  (let* ((source (evalator-history-current :source))
-         (candidates (helm-get-candidates source))
-         (f (lambda (candidates _) (evalator :candidates candidates
-                                             :initp      nil
-                                             :hist-pushp nil))))
-    (helm-exit-and-execute-action (apply-partially f candidates))))
-
 (provide 'evalator-history)

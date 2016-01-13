@@ -43,6 +43,15 @@ transformation."
   ;; Need to get this from context instead
   (insert evalator-context-special-arg-default))
 
+(defun evalator-load ()
+  "Quits the current evalator session and loads a new one."
+  (let* ((source (evalator-history-current :source))
+         (candidates (helm-get-candidates source))
+         (f (lambda (candidates _) (evalator :candidates candidates
+                                             :initp      nil
+                                             :hist-pushp nil))))
+    (helm-exit-and-execute-action (apply-partially f candidates))))
+
 (defun evalator-flash (status)
   (let ((f (if (equal :success status) 'evalator-success 'evalator-error)))
     (with-current-buffer (window-buffer (active-minibuffer-window))
