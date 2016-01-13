@@ -9,12 +9,12 @@
   "Return current history index"
   (plist-get evalator-state :history-index))
 
-(defun evalator-history-push! (data)
+(defun evalator-history-push! (source)
   "Push the current source and expression onto history"
   (evalator-utils-put! evalator-state
                        :history
                        (vconcat (subseq (evalator-history) 0 (+ 1 (evalator-history-index)))
-                                (list (list :source data :expression helm-pattern))))
+                                (list (list :source source :expression helm-pattern))))
   (evalator-utils-put! evalator-state :history-index (+ 1 (evalator-history-index))))
 
 (defun evalator-history-current (&optional k)
