@@ -1,5 +1,4 @@
 (require 'helm)
-(require 'evalator-action)
 
 (defvar evalator-key-map
   (let ((map (make-sparse-keymap)))
