@@ -138,7 +138,7 @@ Tells helm lambda what mode to use.  Defaults to :normal."
          (source (evalator-build-source candidates (plist-get evalator-state :mode))))
     
     (when (or (called-interactively-p 'any) (plist-get o :hist-pushp))
-      (evalator-history-push! source))
+      (evalator-history-push! source helm-pattern))
     
     (helm :sources source
           :buffer "*evalator*"
