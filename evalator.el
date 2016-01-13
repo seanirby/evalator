@@ -36,7 +36,7 @@ if no candidates were marked."
     (concat "History forward, "
             (f 'evalator-action-previous)    ": History backward, "
             (f 'evalator-action-confirm) ": Accept transformation, "
-            (f 'evalator-action-insert)  ": Insert special arg")))
+            (f 'evalator-action-insert-arg)  ": Insert special arg")))
 
 (defun evalator-build-source (candidates mode)
   "Builds the source for a evalator session.  Accepts a list of
