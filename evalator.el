@@ -62,7 +62,7 @@ called.  Otherwise, the 'transform-candidates function is called."
     (condition-case err
         (progn (evalator-flash :success)
                (if (equal 0 (evalator-history-index))
-                   (progn (setq evalator-state (plist-put evalator-state :seed helm-pattern))
+                   (progn (evalator-utils-put! evalator-state :seed helm-pattern)
                           (funcall
                            make-candidates
                            helm-pattern
@@ -127,7 +127,7 @@ Tells helm lambda what mode to use.  Defaults to :normal."
   (when (or (called-interactively-p 'any) (plist-get o :initp))
     (evalator-state-init)
     (when (plist-get o :mode)
-      (setq evalator-state (plist-put evalator-state :mode (plist-get o :mode))))
+      (evalator-utils-put! evalator-state :mode (plist-get o :mode)))
     (funcall (slot-value (plist-get evalator-state :context) :init)))
   
   (let* ((helm-mode-line-string "")

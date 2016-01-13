@@ -10,14 +10,14 @@
   "Go to the next history state and update the evalator session."
   (interactive)
   (when (not (equal 0 (evalator-history-index)))
-    (setq evalator-state (plist-put evalator-state :history-index (+ -1 (evalator-history-index))))
+    (evalator-utils-put! evalator-state :history-index (+ -1 (evalator-history-index)))
     (evalator-history-load)))
 
 (defun evalator-action-next ()
   "Go to the previous history state and update the evalator session."
   (interactive)
   (when (not (equal (+ -1 (length (evalator-history))) (evalator-history-index)))
-    (setq evalator-state (plist-put evalator-state :history-index (+ 1 (evalator-history-index))))
+    (evalator-utils-put! evalator-state :history-index (+ 1 (evalator-history-index)))
     (evalator-history-load)))
 
 (defun evalator-action-confirm ()
