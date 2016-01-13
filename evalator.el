@@ -39,6 +39,7 @@ transformation."
       (helm-exit-and-execute-action (apply-partially f candidates)))))
 
 (defun evalator-action-insert-arg ()
+  "Inserts the special evalator arg into the expression prompt"
   (interactive)
   ;; Need to get this from context instead
   (insert evalator-context-special-arg-default))
@@ -53,14 +54,11 @@ transformation."
     (helm-exit-and-execute-action (apply-partially f candidates))))
 
 (defun evalator-flash (status)
+  "Changes the expression prompt face to 'evalator-(success | error)'
+depending on the 'status' arg"
   (let ((f (if (equal :success status) 'evalator-success 'evalator-error)))
     (with-current-buffer (window-buffer (active-minibuffer-window))
       (face-remap-add-relative 'minibuffer-prompt f))))
-
-(defun evalator-thing-before-point (&optional limits regexp)
-  "TEMP"
-  (save-excursion
-    (buffer-substring-no-properties (point-at-bol) (point))))
 
 (cl-defun evalator-marked-candidates (&key with-wildcard)
   "Same as 'helm-marked-candidates' except it returns nil 
@@ -76,11 +74,12 @@ if no candidates were marked."
       candidates)))
 
 (defun evalator-persistent-help ()
+  "Builds persistent help string"
   (cl-flet ((f (command)
-            (key-description (where-is-internal command evalator-key-map t))))
+               (key-description (where-is-internal command evalator-key-map t))))
     (concat "History forward, "
             (f 'evalator-action-previous)    ": History backward, "
-            (f 'evalator-action-confirm) ": Accept transformation, "
+            (f 'evalator-action-confirm)     ": Accept transformation, "
             (f 'evalator-action-insert-arg)  ": Insert special arg")))
 
 (defun evalator-build-source (candidates mode)
