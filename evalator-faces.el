@@ -1,5 +1,3 @@
-;; Faces
-
 (defgroup evalator-faces nil
   "Customize the appearance of evalator."
   :prefix "evalator-"

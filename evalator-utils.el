@@ -1,5 +1,3 @@
-;; Utility funcitons 
-
 (defun evalator-utils-put! (plst k v)
   (setq plst (plist-put plst k v)))
 
