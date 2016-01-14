@@ -3,6 +3,12 @@
 
 (defvar evalator-context-elisp-special-arg nil)
 
+(defun evalator-context-elisp-make-equiv-expr (exprs)
+  (let* ((spec-arg (evalator-context-get-special-arg evalator-context-elisp))
+         (sub (lambda (e1 e2)
+                (replace-regexp-in-string spec-arg e1 e2 t))))
+    (reduce sub exprs)))
+
 (defun evalator-context-elisp-substitute-special-args (expr c)
   "Walks through the expression and replaces any special args with
 their proper value."
@@ -75,6 +81,9 @@ their proper value."
    
    :init
    (lambda () nil)
+
+   :make-equiv-expr
+   'evalator-context-elisp-make-equiv-expr
 
    :make-candidates
    'evalator-context-elisp-make-candidates

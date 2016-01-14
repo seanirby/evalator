@@ -24,6 +24,12 @@
     "Performs any setup needed before any context evaluation functions
     are called. All functions below are context evaluation functions.")
 
+   (make-equiv-expr
+    :initarg :make-equiv-expr
+    :custom function
+    :documentation
+    "")
+
    (make-candidates
     :initarg :make-candidates
     :custom function
