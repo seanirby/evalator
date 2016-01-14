@@ -181,3 +181,7 @@ Otherwise the initial candidate will be the value of
       (should (equal '("foo") (evalator)))
       (should (equal '("bar") (evalator '(:candidates ("bar"))))))))
 
+(ert-deftest evalator-explicit-test ()
+  "Test that function calls 'evalator' with explicit mode"
+  (flet ((evalator (&rest args) (plist-get args :mode)))
+    (should (equal :explicit (evalator-explicit)))))
