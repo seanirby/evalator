@@ -125,3 +125,14 @@ argument passed to 'evalator-build-source'"
                          (evalator-transform-candidates "(list 1" nil make-f transform-f)))
           ;; Flash status is ':error' when call fails
           (should (equal :error flash-status)))))))
+
+(ert-deftest evalator-insert-last-equiv-expr-test ()
+  "Tests that an expression is constructed by substituting the first
+element of an expression chain into following expressions via the
+special arg."
+  (let ((expr-chain '("(list 1 2 3)" "(reduce '+ Ⓔ)" "(+ Ⓔ 1)"))
+        (evalator-context-special-arg-default "Ⓔ"))
+    (with-temp-buffer
+      (evalator-insert-last-equiv-expr expr-chain)
+      (should (equal "(+ (reduce '+ (list 1 2 3)) 1)"
+                     (buffer-string))))))

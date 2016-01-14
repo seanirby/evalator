@@ -30,3 +30,13 @@ and update state's index."
          (evalator-history-index () 1))
     (should (equal "bar"
                    (evalator-history-current)))))
+
+(ert-deftest evalator-history-expression-chain-tests ()
+  "Tests the 'evalator-history-expression-chain' returns all
+expressions in history except for the first"
+  (let ((evalator-state '(:history [(:expression nil)
+                                    (:expression "(expr1)")
+                                    (:expression "(expr2)")
+                                    (:expression "(expr3)")])))
+    (should (equal '("(expr1)" "(expr2)" "(expr3)")
+                   (evalator-history-expression-chain)))))

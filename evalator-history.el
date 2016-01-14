@@ -24,4 +24,13 @@ index."
   (let ((h (elt (evalator-history) (evalator-history-index))))
     (if k (plist-get h k) h)))
 
+(defun evalator-history-expression-chain ()
+  "Returns a list of all expressions in history except for the first
+since that is the empty string used in creating the initial history
+element."
+  (cdr (mapcar
+        (lambda (h)
+          (plist-get h :expression))
+        (plist-get evalator-state :history))))
+
 (provide 'evalator-history)

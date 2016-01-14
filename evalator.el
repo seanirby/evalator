@@ -120,20 +120,15 @@ candidates."
            (evalator-flash :error)
            cands-all))))))
 
-(defun evalator-insert-last-equiv-expr ()
+(defun evalator-insert-last-equiv-expr (&optional exprs)
   "Inserts the equivalent expression of the previous evalator
 session.  NOTE: Session must have been run with 'evalator-explicit'
 for this to work."
   (interactive)
-  (let* ((exprs (cdr (mapcar
-                      (lambda (h)
-                        (plist-get h :expression))
-                      (plist-get evalator-state :history)))))
-    (with-current-buffer
-        (insert (reduce
-                 (lambda (e1 e2)
-                   (replace-regexp-in-string evalator-context-special-arg-default e1 e2 t))
-                 exprs)))))
+  (let ((sub (lambda (e1 e2)
+               (replace-regexp-in-string evalator-context-special-arg-default e1 e2 t)))
+        (expr-chain (if exprs exprs (evalator-history-expression-chain))))
+    (insert (reduce sub expr-chain))))
 
 (defun evalator-resume ()
   "Resumes last evalator session."
