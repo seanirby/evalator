@@ -47,15 +47,15 @@ their proper value."
   (evalator-context-elisp-make-candidates
    (if (equal nil candidates-marked)
        (mapcar (lambda (candidate)
-                 (evalator-context-elisp-apply-expression (read expr-str)
-                                                          (read candidate)))
+                 (evalator-context-elisp-eval (read expr-str)
+                                              (read candidate)))
                candidates-all)
-     (evalator-context-elisp-apply-expression (read expr-str)
-                                              (mapcar 'read candidates-marked)))
+     (evalator-context-elisp-eval (read expr-str)
+                                  (mapcar 'read candidates-marked)))
    mode
    t))
 
-(defun evalator-context-elisp-apply-expression (expr x)
+(defun evalator-context-elisp-eval (expr x)
   (let ((new-expr (evalator-context-elisp-substitute-special-args expr x)))
     (eval new-expr)))
 
