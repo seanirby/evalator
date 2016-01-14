@@ -151,7 +151,7 @@ necessary."
       (evalator-utils-put! evalator-state :mode mode))
     (funcall init-f)))
 
-(defun evalator (&optional opts)
+(defun evalator (&rest opts)
   "Starts a helm session for interactive evaluation and transformation
 of inp"
   (interactive)

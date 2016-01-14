@@ -179,7 +179,7 @@ Otherwise the initial candidate will be the value of
     (flet ((evalator-build-source (candidates _) candidates)
            (helm (&rest args) (cadr args)))
       (should (equal '("foo") (evalator)))
-      (should (equal '("bar") (evalator '(:candidates ("bar"))))))))
+      (should (equal '("bar") (evalator :candidates '("bar")))))))
 
 (ert-deftest evalator-explicit-test ()
   "Test that function calls 'evalator' with explicit mode"

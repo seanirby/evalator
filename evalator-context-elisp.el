@@ -8,7 +8,7 @@ their proper value."
                    (format "%s[0-9]*" evalator-context-special-arg-default))
               
               (quote-if-list (x)
-                             (if (consp x) (quote x) x))
+                             (if (consp x) `'(,@x) x))
               
               (get-elt (sym)
                        (quote-if-list (elt c (string-to-number (subseq (symbol-name sym) 1)))))
@@ -24,10 +24,12 @@ their proper value."
                                (t
                                 x))
                        x))
-              (rec (xs)
-                   (cond ((equal nil (car xs)) nil)
-                         ((consp (car xs)) (cons (rec (car xs)) (rec (cdr xs))))
-                         (t (cons (subst (car xs)) (rec (cdr xs)))))))
+              (rec (expr)
+                   (cond ((symbolp expr) (subst expr)) 
+                         ((equal nil (car expr)) nil)
+                         ((consp (car expr)) (cons (rec (car expr)) (rec (cdr expr))))
+                         (t (cons (subst (car expr)) (rec (cdr expr))))))
+              )
     (rec expr)))
 
 (defun evalator-context-elisp-make-candidates (input mode &optional not-initialp)
