@@ -1,5 +1,6 @@
 (require 'eieio)
 
+;; Want this global so users can customize it
 (defvar evalator-context-special-arg-default "Ⓔ") ;; x24ba
 
 ;; References to data types in the docstrings below are assumed to be elisp types.
@@ -10,6 +11,12 @@
     :documentation
     "Name of the evaluation context (elisp, cider, etc..)")
 
+   (special-arg
+    :initarg :special-arg
+    :custom string
+    :documentation
+    "Special arg used for substitution in evalator expressions.")
+   
    (init
     :initarg :init
     :custom function
@@ -37,5 +44,9 @@
     marked candidates, and an expression string as arguments. Function
     should return a list of strings.  Function should throw an error
     if the transformation fails.")))
+
+(defmethod evalator-context-get-special-arg ((context evalator-context))
+  (or (eval (slot-value context :special-arg))
+      evalator-context-special-arg-default))
 
 (provide 'evalator-context)

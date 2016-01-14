@@ -1,7 +1,7 @@
 (require 'ert)
 (require 'evalator-context-elisp)
 
-(setq evalator-context-special-arg-default "Ⓔ")
+(setq evalator-context-elisp-special-arg "Ⓔ")
 (defalias 'ssa 'evalator-context-elisp-substitute-special-args)
 (defalias 'mc 'evalator-context-elisp-make-candidates)
 (defalias 'tc 'evalator-context-elisp-transform-candidates)

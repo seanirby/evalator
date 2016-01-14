@@ -53,11 +53,10 @@ transformation."
     (when candidates
       (helm-exit-and-execute-action (apply-partially f candidates)))))
 
-(defun evalator-action-insert-arg ()
+(defun evalator-action-insert-special-arg ()
   "Inserts the special evalator arg into the expression prompt"
   (interactive)
-  ;; Need to get this from context instead
-  (insert evalator-context-special-arg-default))
+  (insert (evalator-context-get-special-arg (plist-get evalator-state :context))))
 
 (defun evalator-load ()
   "Quits the current evalator session and loads a new one."
@@ -93,9 +92,9 @@ if no candidates were marked."
   (cl-flet ((f (command)
                (key-description (where-is-internal command evalator-key-map t))))
     (concat "History forward, "
-            (f 'evalator-action-previous)    ": History backward, "
-            (f 'evalator-action-confirm)     ": Accept transformation, "
-            (f 'evalator-action-insert-arg)  ": Insert special arg")))
+            (f 'evalator-action-previous)            ": History backward, "
+            (f 'evalator-action-confirm)             ": Accept transformation, "
+            (f 'evalator-action-insert-special-arg)  ": Insert special arg")))
 
 (defun evalator-build-source (candidates mode)
   "Builds the source for a evalator session.  Accepts a list of
@@ -136,8 +135,9 @@ candidates."
 session.  NOTE: Session must have been run with 'evalator-explicit'
 for this to work."
   (interactive)
-  (let ((sub (lambda (e1 e2)
-               (replace-regexp-in-string evalator-context-special-arg-default e1 e2 t)))
+  (let* ((spec-arg (evalator-context-get-special-arg (plist-get evalator-state :context)))
+         (sub (lambda (e1 e2)
+               (replace-regexp-in-string spec-arg e1 e2 t)))
         (expr-chain (if exprs exprs (evalator-history-expression-chain))))
     (insert (reduce sub expr-chain))))
 

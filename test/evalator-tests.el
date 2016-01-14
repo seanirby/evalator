@@ -43,12 +43,12 @@ an error message."
         (should (equal nil (evalator-action-confirm)))
         (should (equal "Dummy Error Message" (buffer-string)))))))
 
-(ert-deftest evalator-action-insert-arg-test ()
+(ert-deftest evalator-action-insert-special-arg-test ()
   "Tests that the special arg character is inserted into a buffer"
-  (let ((evalator-context-special-arg-default "*"))
-    (should (equal "*"
+  (let ((evalator-context-special-arg-default "Ⓔ"))
+    (should (equal "Ⓔ"
                    (with-temp-buffer
-                     (evalator-action-insert-arg)
+                     (evalator-action-insert-special-arg)
                      (buffer-string))))))
 
 ;; TODO Not sure how to test this one yet
@@ -65,9 +65,9 @@ or nil"
 (ert-deftest evalator-persistent-help-test ()
   "Tests that 'evalator-persistent-help' builds persistent help
 string."
-  (let ((evalator-key-map (list 'evalator-action-previous   "C-l"
-                                'evalator-action-confirm    "RET"
-                                'evalator-action-insert-arg "C-;")))
+  (let ((evalator-key-map (list 'evalator-action-previous           "C-l"
+                                'evalator-action-confirm            "RET"
+                                'evalator-action-insert-special-arg "C-;")))
     (flet ((where-is-internal (command key-map _) (plist-get key-map command))
            (key-description (str) str))
       (should (equal (concat "History forward, "
