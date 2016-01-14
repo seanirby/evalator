@@ -136,3 +136,48 @@ special arg."
       (evalator-insert-last-equiv-expr expr-chain)
       (should (equal "(+ (reduce '+ (list 1 2 3)) 1)"
                      (buffer-string))))))
+
+(ert-deftest evalator-init-history ()
+  "Test that evalator-history-push! is called when function is called
+  with pushp flag"
+  (flet ((evalator-history-push! (source expr) t))
+    (should (equal t (evalator-init-history nil nil t)))
+    (should (equal nil (evalator-init-history nil nil nil)))))
+
+(ert-deftest evalator-init-tests ()
+  "Tests that state is initialized, mode is set, and init-f function
+is called if function is called with non-nil initp flag.  Tests that
+nothing is done if initp is nil."
+  (let ((init-f (lambda () t))
+        (evalator-state '(:initialized nil :mode nil)))
+    (flet ((evalator-state-init ()
+                                (setq evalator-state
+                                      (plist-put evalator-state :initialized t)))
+           (evalator-utilts-put! (state k v)
+                                 (setq state
+                                       (plist-put state k v))))
+      "init-f should not be called"
+      (should (equal nil (evalator-init init-f nil :dummy-mode)))
+      "evalator-state should not be initialized"
+      (should (equal nil (plist-get evalator-state :initialized)))
+      "mode should not be set"
+      (should (equal nil (plist-get evalator-state :mode)))
+      
+      "init-f should be called"
+      (should (equal t (evalator-init init-f t :dummy-mode)))
+      "mode should be set"
+      (should (equal :dummy-mode (plist-get evalator-state :mode)))
+      "evalator-state should be initialized"
+      (should (equal t (plist-get evalator-state :initialized))))))
+
+(ert-deftest evalator-test ()
+  "If candidates are passed to 'evalator' through the input options
+'opts' then 'helm' is caleld with those candidates in the source.
+Otherwise the initial candidate will be the value of
+'evalator-candidates-initial'."
+  (let ((evalator-candidates-initial '("foo")))
+    (flet ((evalator-build-source (candidates _) candidates)
+           (helm (&rest args) (cadr args)))
+      (should (equal '("foo") (evalator)))
+      (should (equal '("bar") (evalator '(:candidates ("bar"))))))))
+

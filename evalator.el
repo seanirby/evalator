@@ -6,6 +6,8 @@
 (require 'evalator-state)
 (require 'helm)
 
+(defvar evalator-candidates-initial '("Enter an expression below to generate initial data"))
+
 ;; TODO There's currently a weird bug happening where spamming the history next
 ;; and previous actions will cause the evalator session to shut down. Has to do with
 ;; let bindings being nested too deep.
@@ -135,45 +137,41 @@ for this to work."
   (interactive)
   (helm-resume "*evalator*"))
 
-(defun evalator (&rest o)
-  "Starts a helm session for interactive evaluation and transformation
-of input data.  Optional argument o may have the following properties:
+(defun evalator-init-history (source expr pushp)
+  "Pushes source and expr onto history if necessary."
+  (when pushp
+    (evalator-history-push! source expr)))
 
-:input 
-The input string used to make the helm candidates.  Will be the
-text behind the cursor if not present.
-
-:candidates 
-The candidates to use for building a helm source. If this
-argument is present the :input property is ignored.
-
-:initp 
-Flag to force initialization.  Initialization will always occur if
-evalator is called interactively.
-
-:hist-pushp 
-Flag to force push source onto history.  A history push will always
-occur if evalator is called interactively.
-
-:mode 
-Tells helm lambda what mode to use.  Defaults to :normal."
-  (interactive)
-  
-  (when (or (called-interactively-p 'any) (plist-get o :initp))
+(defun evalator-init (init-f initp mode)
+  "Calls context initialization function and sets the mode if
+necessary."
+  (when initp
     (evalator-state-init)
-    (when (plist-get o :mode)
-      (evalator-utils-put! evalator-state :mode (plist-get o :mode)))
-    (funcall (slot-value (plist-get evalator-state :context) :init)))
-  
+    (when mode
+      (evalator-utils-put! evalator-state :mode mode))
+    (funcall init-f)))
+
+(defun evalator (&optional opts)
+  "Starts a helm session for interactive evaluation and transformation
+of inp"
+  (interactive)
+
+  (evalator-init (slot-value (plist-get evalator-state :context) :init)
+                 (or (called-interactively-p 'any)
+                     (plist-get opts :initp))
+                 (plist-get opts :mode))
+
   (let* ((helm-mode-line-string "")
-         (candidatesp (not (equal nil (plist-get o :candidates))))
+         (candidatesp (not (equal nil (plist-get opts :candidates))))
          (candidates (if candidatesp
-                         (plist-get o :candidates)
-                       '("Enter an expression below to generate initial data")))
+                         (plist-get opts :candidates)
+                       evalator-candidates-initial))
          (source (evalator-build-source candidates (plist-get evalator-state :mode))))
     
-    (when (or (called-interactively-p 'any) (plist-get o :hist-pushp))
-      (evalator-history-push! source helm-pattern))
+    (evalator-init-history source
+                           helm-pattern
+                           (or (called-interactively-p 'any)
+                               (plist-get opts :hist-pushp)))
     
     (helm :sources source
           :buffer "*evalator*"
