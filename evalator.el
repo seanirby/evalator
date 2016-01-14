@@ -8,6 +8,15 @@
 
 (defvar evalator-candidates-initial '("Enter an expression below to generate initial data"))
 
+(defvar evalator-prompt-f
+  (lambda (hist-ind hist-length)
+    (let ((hist (format "%s of %s" (+ 1 hist-ind) hist-length))
+          (sep "|")
+          (expr-prompt "Expression:" ))
+      (mapconcat 'identity `(,hist ,sep ,expr-prompt) " ")))
+  "Points to a function that is called with the current history index
+and length.  Will be used to generate the evalator prompt") 
+
 ;; TODO There's currently a weird bug happening where spamming the history next
 ;; and previous actions will cause the evalator session to shut down. Has to do with
 ;; let bindings being nested too deep.
@@ -172,10 +181,12 @@ of inp"
                            helm-pattern
                            (or (called-interactively-p 'any)
                                (plist-get opts :hist-pushp)))
-    
+
     (helm :sources source
           :buffer "*evalator*"
-          :prompt "Expression: ")))
+          :prompt (funcall evalator-prompt-f
+                           (evalator-history-index)
+                           (length (evalator-history))))))
 
 (defun evalator-explicit ()
   (interactive)
