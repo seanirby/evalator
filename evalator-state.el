@@ -3,7 +3,6 @@
 
 (defvar evalator-state-default (list :context       evalator-context-elisp
                                      :mode          :normal
-                                     :seed          nil
                                      :history       []
                                      :history-index -1))
 
