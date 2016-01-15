@@ -127,9 +127,6 @@ argument passed to 'evalator-build-source'"
           (should (equal :error flash-status)))))))
 
 (ert-deftest evalator-insert-equiv-expr-test ()
-  "Tests that an expression is constructed by substituting the first
-element of an expression chain into following expressions via the
-special arg."
   (let ((expr-chain '("(list 1 2 3)" "(reduce '+ Ⓔ)" "(+ Ⓔ 1)")))
     (with-temp-buffer
       (evalator-insert-equiv-expr expr-chain)
@@ -137,16 +134,11 @@ special arg."
                      (buffer-string))))))
 
 (ert-deftest evalator-init-history ()
-  "Test that evalator-history-push! is called when function is called
-  with pushp flag"
   (flet ((evalator-history-push! (source expr) t))
     (should (equal t (evalator-init-history nil nil t)))
     (should (equal nil (evalator-init-history nil nil nil)))))
 
 (ert-deftest evalator-init-tests ()
-  "Tests that state is initialized, mode is set, and init-f function
-is called if function is called with non-nil initp flag.  Tests that
-nothing is done if initp is nil."
   (let ((init-f (lambda () t))
         (evalator-state '(:initialized nil :mode nil)))
     (flet ((evalator-state-init ()
@@ -170,10 +162,6 @@ nothing is done if initp is nil."
       (should (equal t (plist-get evalator-state :initialized))))))
 
 (ert-deftest evalator-test ()
-  "If candidates are passed to 'evalator' through the input options
-'opts' then 'helm' is caleld with those candidates in the source.
-Otherwise the initial candidate will be the value of
-'evalator-candidates-initial'."
   (let ((evalator-candidates-initial '("foo")))
     (flet ((evalator-build-source (candidates _) candidates)
            (helm (&rest args) (cadr args)))
@@ -181,6 +169,5 @@ Otherwise the initial candidate will be the value of
       (should (equal '("bar") (evalator :candidates '("bar")))))))
 
 (ert-deftest evalator-explicit-test ()
-  "Test that function calls 'evalator' with explicit mode"
   (flet ((evalator (&rest args) (plist-get args :mode)))
     (should (equal :explicit (evalator-explicit)))))
