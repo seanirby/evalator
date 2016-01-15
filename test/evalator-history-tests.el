@@ -22,7 +22,7 @@ and update state's index."
     (progn
       (evalator-history-push! '("foo") "bar")
       (should (equal
-               '(:history [(:source ("foo") :expression "bar")] :history-index 0) 
+               '(:history [(:candidates ("foo") :expression "bar")] :history-index 0) 
                evalator-state)))))
 
 (ert-deftest evalator-history-current-test ()

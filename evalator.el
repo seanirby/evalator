@@ -8,6 +8,7 @@
 
 (defvar evalator-candidates-initial '("Enter an expression below to generate initial data"))
 
+;; TODO this approach doesn't work anymore
 (defvar evalator-prompt-f
   (lambda (hist-ind hist-length)
     (let ((hist (format "%s of %s" (+ 1 hist-ind) hist-length))
@@ -17,22 +18,22 @@
   "Points to a function that is called with the current history index
 and length.  Will be used to generate the evalator prompt") 
 
-;; TODO There's currently a weird bug happening where spamming the history next
-;; and previous actions will cause the evalator session to shut down. Has to do with
-;; let bindings being nested too deep.
 (defun evalator-action-previous ()
   "Go to the next history state and update the evalator session."
   (interactive)
   (when (not (equal 0 (evalator-history-index)))
     (evalator-utils-put! evalator-state :history-index (+ -1 (evalator-history-index)))
-    (evalator-load)))
+    (helm-set-pattern "")
+    (helm-update)))
 
 (defun evalator-action-next ()
   "Go to the previous history state and update the evalator session."
   (interactive)
+  (setq helm--prompt "blar")
   (when (not (equal (+ -1 (length (evalator-history))) (evalator-history-index)))
     (evalator-utils-put! evalator-state :history-index (+ 1 (evalator-history-index)))
-    (evalator-load)))
+    (helm-set-pattern "")
+    (helm-update)))
 
 (defun evalator-action-confirm ()
   "Accepts results and starts a new evalator for further
@@ -47,25 +48,15 @@ transformation."
                       (slot-value (plist-get evalator-state :context) :make-candidates)
                       (slot-value (plist-get evalator-state :context) :transform-candidates)
                       err-handler))
-         (f (lambda (candidates _) (evalator :candidates candidates
-                                             :initp      nil
-                                             :hist-pushp t))))
+         )
     (when candidates
-      (helm-exit-and-execute-action (apply-partially f candidates)))))
+      (evalator-history-push! candidates helm-pattern)
+      (helm-set-pattern ""))))
 
 (defun evalator-action-insert-special-arg ()
   "Inserts the special evalator arg into the expression prompt"
   (interactive)
   (insert (evalator-context-get-special-arg (plist-get evalator-state :context))))
-
-(defun evalator-load ()
-  "Quits the current evalator session and loads a new one."
-  (let* ((source (evalator-history-current :source))
-         (candidates (helm-get-candidates source))
-         (f (lambda (candidates _) (evalator :candidates candidates
-                                             :initp      nil
-                                             :hist-pushp nil))))
-    (helm-exit-and-execute-action (apply-partially f candidates))))
 
 (defun evalator-flash (status)
   "Changes the expression prompt face to 'evalator-(success | error)'
@@ -116,7 +107,7 @@ candidates."
 
 (defun evalator-transform-candidates (expr mode make-f transform-f &optional err-handler)
   ""
-  (let ((cands-all (helm-get-candidates (helm-get-current-source)))
+  (let ((cands-all (evalator-history-current :candidates))
         (cands-marked (evalator-marked-candidates)))
     (condition-case err
         (progn (evalator-flash :success)
@@ -142,12 +133,12 @@ for this to work."
 (defun evalator-resume ()
   "Resumes last evalator session."
   (interactive)
-  (helm-resume "*evalator*"))
+  (helm-resume "*helm-evalator*"))
 
-(defun evalator-init-history (source expr pushp)
+(defun evalator-init-history (candidates expr pushp)
   "Pushes source and expr onto history if necessary."
   (when pushp
-    (evalator-history-push! source expr)))
+    (evalator-history-push! candidates expr)))
 
 (defun evalator-init (init-f initp mode)
   "Calls context initialization function and sets the mode if
@@ -175,16 +166,14 @@ of inp"
                        evalator-candidates-initial))
          (source (evalator-build-source candidates (plist-get evalator-state :mode))))
     
-    (evalator-init-history source
+    (evalator-init-history candidates
                            helm-pattern
                            (or (called-interactively-p 'any)
                                (plist-get opts :hist-pushp)))
 
     (helm :sources source
           :buffer "*evalator*"
-          :prompt (funcall evalator-prompt-f
-                           (evalator-history-index)
-                           (length (evalator-history))))))
+          :prompt "Enter Expression:")))
 
 (defun evalator-explicit ()
   (interactive)
