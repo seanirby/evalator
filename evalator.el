@@ -47,8 +47,7 @@ transformation."
                       (plist-get evalator-state :mode)
                       (slot-value (plist-get evalator-state :context) :make-candidates)
                       (slot-value (plist-get evalator-state :context) :transform-candidates)
-                      err-handler))
-         )
+                      err-handler)))
     (when candidates
       (evalator-history-push! candidates helm-pattern)
       (helm-set-pattern ""))))
@@ -135,51 +134,22 @@ for this to work."
   (interactive)
   (helm-resume "*helm-evalator*"))
 
-(defun evalator-init-history (candidates expr pushp)
-  "Pushes source and expr onto history if necessary."
-  (when pushp
-    (evalator-history-push! candidates expr)))
-
-(defun evalator-init (init-f initp mode)
-  "Calls context initialization function and sets the mode if
-necessary."
-  (when initp
-    (evalator-state-init)
-    (when mode
-      (evalator-utils-put! evalator-state :mode mode))
-    (funcall init-f)))
-
-(defun evalator (&rest opts)
+(defun evalator (&optional mode)
   "Starts a helm session for interactive evaluation and transformation
-of inp"
+of input data"
   (interactive)
-
-  (evalator-init (slot-value (plist-get evalator-state :context) :init)
-                 (or (called-interactively-p 'any)
-                     (plist-get opts :initp))
-                 (plist-get opts :mode))
+  (evalator-state-init mode)
+  (evalator-history-push! evalator-candidates-initial "")
 
   (let* ((helm-mode-line-string "")
-         (candidatesp (not (equal nil (plist-get opts :candidates))))
-         (candidates (if candidatesp
-                         (plist-get opts :candidates)
-                       evalator-candidates-initial))
-         (source (evalator-build-source candidates (plist-get evalator-state :mode))))
-    
-    (evalator-init-history candidates
-                           helm-pattern
-                           (or (called-interactively-p 'any)
-                               (plist-get opts :hist-pushp)))
-
+         (source (evalator-build-source evalator-candidates-initial mode)))
     (helm :sources source
           :buffer "*evalator*"
           :prompt "Enter Expression:")))
 
 (defun evalator-explicit ()
   (interactive)
-  (evalator :initp      t
-            :hist-pushp t
-            :mode       :explicit))
+  (evalator :explicit))
 
 (provide 'evalator)
 
