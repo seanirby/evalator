@@ -42,7 +42,8 @@ onto the evalator history."
                       err-handler)))
     (when candidates
       (evalator-history-push! candidates helm-pattern)
-      (evalator-unmark-all))))
+      (evalator-unmark-all)
+      (helm-set-pattern ""))))
 
 (defun evalator-action-insert-special-arg ()
   "Inserts the special evalator arg into the expression prompt."
