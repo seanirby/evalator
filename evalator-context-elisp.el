@@ -1,5 +1,6 @@
-(require 'evalator-context)
+(require 'cl-lib)
 (require 'eieio)
+(require 'evalator-context)
 
 (defvar evalator-context-elisp-special-arg nil)
 
