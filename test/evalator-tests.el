@@ -30,14 +30,14 @@
            (helm-set-pattern (p) (setq helm-pattern p)))
 
       ;;When transform-candidates returns non-nil the candidates are pushed on history
-      (flet ((evalator-transform-candidates (&rest _) '("foo")))
+      (flet ((evalator-make-or-transform-candidates (&rest _) '("foo")))
         (evalator-action-confirm)
         (should (equal (list :candidates '("foo")
                              :expression "bar")
                        (evalator-history-current))))
       
       ;;Otherwise nothing is done
-      (flet ((evalator-transform-candidates (&rest args) nil))
+      (flet ((evalator-make-or-transform-candidates (&rest args) nil))
         (evalator-action-confirm)
         (should (equal (list :candidates '("foo")
                              :expression "bar")
@@ -81,7 +81,7 @@
     (should (equal "Evaluation Result(Explicit)"
                    (cdr (assoc 'name args-explicit))))))
 
-(ert-deftest evalator-transform-candidates-test ()
+(ert-deftest evalator-make-or-transform-candidates-test ()
   (let ((evalator-state (list :history [(:candidates ("foo"))
                                         (:candidates ("bar"))]
                               :history-index 0))
@@ -98,12 +98,12 @@
                              "transform-f-called"))))
         ;; make-f is called at index 0
         (should (equal "make-f-called"
-                       (evalator-transform-candidates nil nil make-f transform-f)))
+                       (evalator-make-or-transform-candidates nil nil make-f transform-f)))
 
         (should (equal :success flash-status))
 
         (should (equal '("foo")
-                       (evalator-transform-candidates "(list 1" nil make-f transform-f)))
+                       (evalator-make-or-transform-candidates "(list 1" nil make-f transform-f)))
 
         (should (equal :error flash-status))
 
@@ -111,12 +111,12 @@
         
         ;; transform-f called otherwise
         (should (equal "transform-f-called"
-                       (evalator-transform-candidates nil nil make-f transform-f)))
+                       (evalator-make-or-transform-candidates nil nil make-f transform-f)))
 
         (should (equal :success flash-status))
 
         (should (equal '("bar")
-                       (evalator-transform-candidates "(list 1" nil make-f transform-f)))
+                       (evalator-make-or-transform-candidates "(list 1" nil make-f transform-f)))
 
         (should (equal :error flash-status))))))
 
