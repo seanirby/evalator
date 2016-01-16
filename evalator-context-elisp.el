@@ -104,7 +104,6 @@ element within X) and evaluates the expression."
   (let ((new-expr (evalator-context-elisp-substitute-special-args expr x)))
     (eval new-expr)))
 
-;; TODO kinda confused on the difference between defvar and setq, figure this out.
 (defvar evalator-context-elisp
   (make-instance
    'evalator-context
