@@ -151,8 +151,7 @@ of input data.  Accepts on optional argument MODE."
   (evalator-state-init mode)
   (evalator-history-push! evalator-candidates-initial "")
 
-  (let* ((helm-mode-line-string "")
-         (source (evalator-build-source evalator-candidates-initial mode)))
+  (let* ((source (evalator-build-source evalator-candidates-initial mode)))
     (helm :sources source
           :buffer "*helm-evalator*"
           :prompt "Enter Expression:")))
