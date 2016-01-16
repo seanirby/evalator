@@ -156,7 +156,7 @@ of input data"
   (let* ((helm-mode-line-string "")
          (source (evalator-build-source evalator-candidates-initial mode)))
     (helm :sources source
-          :buffer "*evalator*"
+          :buffer "*helm-evalator*"
           :prompt "Enter Expression:")))
 
 (defun evalator-explicit ()
