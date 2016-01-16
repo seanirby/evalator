@@ -29,7 +29,6 @@ and length.  Will be used to generate the evalator prompt")
 (defun evalator-action-next ()
   "Go to the previous history state and update the evalator session."
   (interactive)
-  (setq helm--prompt "blar")
   (when (not (equal (+ -1 (length (evalator-history))) (evalator-history-index)))
     (evalator-utils-put! evalator-state :history-index (+ 1 (evalator-history-index)))
     (helm-set-pattern "")
