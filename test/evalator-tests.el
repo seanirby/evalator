@@ -5,7 +5,8 @@
   (let ((evalator-state (list :history [(:candidates '())
                                         (:candidates '())]
                               :history-index 0)))
-    (flet ((helm-set-pattern (_) nil)
+    (flet ((evalator-unmark-all () nil)
+           (helm-set-pattern (_) nil)
            (helm-update () nil))
       
       (evalator-action-previous)
@@ -24,7 +25,8 @@
   (let ((helm-pattern "bar")
         (evalator-state (list :history []
                               :history-index -1)))
-    (flet ((slot-value (_o _s) nil)
+    (flet ((evalator-unmark-all () nil)
+           (slot-value (_o _s) nil)
            (helm-set-pattern (p) (setq helm-pattern p)))
 
       ;;When transform-candidates returns non-nil the candidates are pushed on history
@@ -50,6 +52,9 @@
 
 ;; TODO
 (ert-deftest evalator-flash-test ())
+
+;; TODO
+(ert-deftest evalator-unmark-all ())
 
 ;; TODO
 (ert-deftest evalator-marked-candidates ())

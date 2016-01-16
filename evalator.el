@@ -23,6 +23,7 @@ and length.  Will be used to generate the evalator prompt")
   (interactive)
   (when (not (equal 0 (evalator-history-index)))
     (evalator-utils-put! evalator-state :history-index (+ -1 (evalator-history-index)))
+    (evalator-unmark-all)
     (helm-set-pattern "")
     (helm-update)))
 
@@ -31,6 +32,7 @@ and length.  Will be used to generate the evalator prompt")
   (interactive)
   (when (not (equal (+ -1 (length (evalator-history))) (evalator-history-index)))
     (evalator-utils-put! evalator-state :history-index (+ 1 (evalator-history-index)))
+    (evalator-unmark-all)
     (helm-set-pattern "")
     (helm-update)))
 
@@ -49,6 +51,7 @@ transformation."
                       err-handler)))
     (when candidates
       (evalator-history-push! candidates helm-pattern)
+      (evalator-unmark-all)
       (helm-set-pattern ""))))
 
 (defun evalator-action-insert-special-arg ()
@@ -62,6 +65,16 @@ depending on the 'status' arg"
   (let ((f (if (equal :success status) 'evalator-success 'evalator-error)))
     (with-current-buffer (window-buffer (active-minibuffer-window))
       (face-remap-add-relative 'minibuffer-prompt f))))
+
+(defun evalator-unmark-all ()
+  "Same as 'helm-unmark-all' except no message."
+  (interactive)
+  (with-helm-window
+    (save-excursion
+      (helm-clear-visible-mark))
+    (setq helm-marked-candidates nil)
+    (helm-mark-current-line)
+    (helm-display-mode-line (helm-get-current-source))))
 
 (cl-defun evalator-marked-candidates (&key with-wildcard)
   "Same as 'helm-marked-candidates' except it returns nil 
