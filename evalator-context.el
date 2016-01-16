@@ -1,6 +1,5 @@
 (require 'eieio)
 
-;; Want this global so users can customize it
 (defvar evalator-context-special-arg-default "Ⓔ") ;; x24ba
 
 ;; References to data types in the docstrings below are assumed to be elisp types.
