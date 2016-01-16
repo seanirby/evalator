@@ -40,8 +40,9 @@ and length.  Will be used to generate the evalator prompt")
   "Accepts results and starts a new evalator for further
 transformation."
   (interactive)
-  (let* ((err-handler (lambda ()
-                        (message "Can't update, invalid expression")
+  (let* ((err-handler (lambda (err-str)
+                        (evalator-flash :error)
+                        (message (concat "Error: " err-str))
                         nil))
          (candidates (evalator-transform-candidates
                       helm-pattern
@@ -127,7 +128,7 @@ candidates."
                  (funcall transform-f cands-all cands-marked expr mode)))
       (error
        (if err-handler
-           (funcall err-handler)
+           (funcall err-handler (prin1-to-string err))
          (progn
            (evalator-flash :error)
            cands-all))))))
