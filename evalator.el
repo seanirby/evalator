@@ -1,3 +1,12 @@
+;;; evalator.el --- Stub description for evalator
+;; Copyright (C) 2015-2016 Sean Irby
+;;
+;; Author: Sean Irby <sean.t.irby@gmail.com>
+;; Maintainer: Sean Irby <sean.t.irby@gmail.com>
+;; URL: http://www.github.com/seanirby/evalator
+;; Version: 0.0.1
+;; Keywords: languages, elisp, helm
+
 (require 'cl-lib)
 (require 'evalator-context)
 (require 'evalator-faces)
@@ -168,3 +177,5 @@ of input data.  Accepts on optional argument MODE."
   (evalator :explicit))
 
 (provide 'evalator)
+
+;;; evalator.el ends here
