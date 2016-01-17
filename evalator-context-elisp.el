@@ -18,43 +18,21 @@ Example:
                 (replace-regexp-in-string spec-arg e1 e2 t))))
     (reduce sub exprs)))
 
-(defun evalator-context-elisp-substitute-special-args (expr c)
-  "Walks through the expression, EXPR, and replaces any special args with
-the candidate C or the element within C depending on the special arg.
+(defun evalator-context-elisp-subst-numbered-special-args (expr-str c special-arg-str)
+  (let ((pattern (format "%s[0-9]+" special-arg-str)))
+    (flet ((match-f (m)
+                    (prin1-to-string (elt c (string-to-number (subseq m 1))))))
+      (replace-regexp-in-string pattern 'match-f expr-str t))))
 
-Example:
+(defun evalator-context-elisp-subst-identity-special-args (expr-str c special-arg-str)
+  (replace-regexp-in-string special-arg-str (prin1-to-string c) expr-str t))
 
-(evalator-context-elisp-substitute-special-args '(+ 1 Ⓔ) 1)
-=> '(+ 1 1)
 
-(evalator-context-elisp-substitute-special-args '(+ 1 Ⓔ1) [0 1 2])
-=> '(+ 1 1)
-"
-  (let* ((spec-arg (evalator-context-get-special-arg evalator-context-elisp))
-         (regex (format "%s[0-9]*" spec-arg)))
-    (cl-labels ((quote-if-list (x)
-                               (if (consp x) `'(,@x) x))
-                
-                (get-elt (sym)
-                         (quote-if-list (elt c (string-to-number (subseq (symbol-name sym) 1)))))
-                
-                (subst (x)
-                       (if (symbolp x)
-                           (cond ((equal (symbol-name x) spec-arg)
-                                  (quote-if-list c))
-                                 
-                                 ((string-match regex (symbol-name x))
-                                  (quote-if-list (get-elt x)))
-                                
-                                 (t x))
-                         x))
-                
-                (walk (expr)
-                     (cond ((symbolp expr) (subst expr)) 
-                           ((equal nil (car expr)) nil)
-                           ((consp (car expr)) (cons (walk (car expr)) (walk (cdr expr))))
-                           (t (cons (subst (car expr)) (walk (cdr expr)))))))
-      (walk expr))))
+(defun evalator-context-elisp-subst-special-args (expr-str c special-arg-str)
+  ;;TODO this is ugly
+  (evalator-context-elisp-subst-identity-special-args
+   (evalator-context-elisp-subst-numbered-special-args expr-str c special-arg-str)
+   c special-arg-str))
 
 (defun evalator-context-elisp-make-candidates (input mode initial-p)
   "Converts INPUT into a valid list of helm candidates.  In other
@@ -90,19 +68,19 @@ above."
   (evalator-context-elisp-make-candidates
    (if (equal nil candidates-marked)
        (mapcar (lambda (candidate)
-                 (evalator-context-elisp-eval (read expr-str)
+                 (evalator-context-elisp-eval expr-str
                                               (read candidate)))
                candidates-all)
-     (evalator-context-elisp-eval (read expr-str)
+     (evalator-context-elisp-eval expr-str
                                   (mapcar 'read candidates-marked)))
    mode
    nil))
 
-(defun evalator-context-elisp-eval (expr x)
-  "Substitutes any special args in the expression, EXPR, with X(or the
-element within X) and evaluates the expression."
-  (let ((new-expr (evalator-context-elisp-substitute-special-args expr x)))
-    (eval new-expr)))
+(defun evalator-context-elisp-eval (expr-str c)
+  "Substitutes any special args in the expression, EXPR-STR, with
+candidate C(or the element within C) and evaluates the expression."
+  (let ((special-arg-str (evalator-context-get-special-arg evalator-context-elisp)))
+    (eval (read (evalator-context-elisp-subst-special-args expr-str c special-arg-str)))))
 
 (defvar evalator-context-elisp
   (make-instance
