@@ -6,7 +6,10 @@
 (require 'evalator-state)
 (require 'helm)
 
+
 (defvar evalator-candidates-initial '("Enter an expression below to generate initial data"))
+(defvar evalator-error nil)
+(put 'evalator-error 'error-conditions '(error))
 
 (defun evalator-action-previous ()
   "Go to the next history state and update the evalator session."
@@ -122,7 +125,7 @@ is returned."
     (condition-case err
         (progn
           (if (equal "" expr)
-              (signal 'e '(""))
+              (signal 'evalator-error '("Empty Expression"))
             (progn (evalator-flash :success)
                    (if (equal 0 (evalator-history-index))
                        (funcall make-f expr mode t)
