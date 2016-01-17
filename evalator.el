@@ -114,8 +114,8 @@ CANDIDATES and a MODE."
   "Attempts to make or transform the current evalator candidates
 according to the input expression EXPR and mode MODE.  Arguments
 MAKE-F and TRANSFORM-F are references to the current evaluation
-context's `:make-candidates' function and `transform-candidates'
-function, respectively.  If the history index 0 is MAKE-F is called.
+context's `:make-candidates' function and `:transform-candidates'
+function, respectively.  If the history index is 0 MAKE-F is called.
 Otherwise, TRANSFORM-F is called.  If optional arg, ERR-HANDLER, is nil
 and the operation fails the current evalator candidates are returned.
 Otherwise, ERR-HANDLER is called with the error string and that result
