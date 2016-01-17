@@ -56,12 +56,12 @@ Example:
                            (t (cons (subst (car expr)) (walk (cdr expr)))))))
       (walk expr))))
 
-(defun evalator-context-elisp-make-candidates (expr-str mode initial-p)
-  "Converts EXPR-STR into a valid list of helm candidates.  In other
-words, a list of the stringified representation of the expr-str.  How
-EXPR-STR is converted depends on both the MODE argument and the
+(defun evalator-context-elisp-make-candidates (input mode initial-p)
+  "Converts INPUT into a valid list of helm candidates.  In other
+words, a list of the stringified representation of the input.  How
+INPUT is converted depends on both the MODE argument and the
 INITIAL-P flag.  If INITIAL-P is non-nil then it is assumed that
-EXPR-STR came from user input and first needs to be read and evaluated
+INPUT came from user input and first needs to be read and evaluated
 to an elisp object.  If INITIAL-P is nil then it is treated as an
 elisp object.  If MODE is :explicit then the function will always
 return a candidate list of one element.  If MODE is some other value
@@ -69,7 +69,7 @@ then the function will return a candidate list equivalent to the size
 of the input object.  That means scalars will be returned in a size 1
 candidates list.  Vectors and lists will be returned in a candidates
 list whose size is equal to the size of the collection."
-  (let* ((data (if initial-p (eval (read expr-str)) expr-str))
+  (let* ((data (if initial-p (eval (read input)) input))
          (to-obj-string (lambda (x)
                           (prin1-to-string x))))
     (cond
