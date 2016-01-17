@@ -56,26 +56,26 @@ Example:
                            (t (cons (subst (car expr)) (walk (cdr expr)))))))
       (walk expr))))
 
-(defun evalator-context-elisp-make-candidates (input mode &optional not-initial-p)
-  "Converts INPUT into a valid list of helm candidates.  In other
-words, a list of the stringified representation of the input.  How
-INPUT is converted depends on both the MODE argument and the optional
-NOT-INITIAL-P flag.  If NOT-INITIAL-P is nil then it is assumed that
-INPUT came from user input and first needs to be read and evaluated to
-an elisp object.  If NOT-INITIAL-P is non-nil then it is treated as an
+(defun evalator-context-elisp-make-candidates (expr-str mode initial-p)
+  "Converts EXPR-STR into a valid list of helm candidates.  In other
+words, a list of the stringified representation of the expr-str.  How
+EXPR-STR is converted depends on both the MODE argument and the
+INITIAL-P flag.  If INITIAL-P is non-nil then it is assumed that
+EXPR-STR came from user input and first needs to be read and evaluated
+to an elisp object.  If INITIAL-P is nil then it is treated as an
 elisp object.  If MODE is :explicit then the function will always
 return a candidate list of one element.  If MODE is some other value
 then the function will return a candidate list equivalent to the size
 of the input object.  That means scalars will be returned in a size 1
 candidates list.  Vectors and lists will be returned in a candidates
 list whose size is equal to the size of the collection."
-  (let* ((data (if not-initial-p input (eval (read input))))
+  (let* ((data (if initial-p (eval (read expr-str)) expr-str))
          (to-obj-string (lambda (x)
                           (prin1-to-string x))))
     (cond
-     ((equal :explicit mode) (if not-initial-p
-                                 (list (funcall to-obj-string (car data)))
-                               (list (funcall to-obj-string data))))
+     ((equal :explicit mode) (if initial-p
+                                 (list (funcall to-obj-string data))
+                               (list (funcall to-obj-string (car data)))))
      ((and (not (stringp data)) (sequencep data)) (mapcar to-obj-string data))
      (t (list (funcall to-obj-string data))))))
 
@@ -96,7 +96,7 @@ above."
      (evalator-context-elisp-eval (read expr-str)
                                   (mapcar 'read candidates-marked)))
    mode
-   t))
+   nil))
 
 (defun evalator-context-elisp-eval (expr x)
   "Substitutes any special args in the expression, EXPR, with X(or the
@@ -109,7 +109,7 @@ element within X) and evaluates the expression."
    'evalator-context
    
    :name
-   "ELisp"
+   "elisp"
 
    :special-arg
    'evalator-context-elisp-special-arg

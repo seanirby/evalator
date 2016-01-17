@@ -88,7 +88,7 @@
         (flash-status nil))
     (flet ((evalator-marked-candidates () nil)
            (evalator-flash (status) (setq flash-status status)))
-      (let ((make-f (lambda (bad-expr _mode)
+      (let ((make-f (lambda (bad-expr _mode _initial-p)
                       (if bad-expr
                           (eval (read bad-expr))
                         "make-f-called")))

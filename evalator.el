@@ -122,7 +122,7 @@ is returned."
     (condition-case err
         (progn (evalator-flash :success)
                (if (equal 0 (evalator-history-index))
-                   (funcall make-f expr mode)
+                   (funcall make-f expr mode t)
                  (funcall transform-f cands-all cands-marked expr mode)))
       (error
        (if err-handler
@@ -162,4 +162,3 @@ of input data.  Accepts on optional argument MODE."
   (evalator :explicit))
 
 (provide 'evalator)
-
