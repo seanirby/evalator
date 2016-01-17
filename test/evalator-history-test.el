@@ -1,4 +1,6 @@
 (require 'evalator-history)
+(require 'cl-lib)
+(require 'noflet)
 
 (ert-deftest evalator-history-test ()
   "Test that 'evalator-history' returns the ':history' value of
@@ -26,7 +28,7 @@ and update state's index."
                evalator-state)))))
 
 (ert-deftest evalator-history-current-test ()
-  (flet ((evalator-history () ["foo" "bar" "baz"])
+  (noflet ((evalator-history () ["foo" "bar" "baz"])
          (evalator-history-index () 1))
     (should (equal "bar"
                    (evalator-history-current)))))

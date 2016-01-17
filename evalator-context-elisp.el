@@ -16,13 +16,13 @@ Example:
   (let* ((spec-arg (evalator-context-get-special-arg evalator-context-elisp))
          (sub (lambda (e1 e2)
                 (replace-regexp-in-string spec-arg e1 e2 t))))
-    (reduce sub exprs)))
+    (cl-reduce sub exprs)))
 
 (defun evalator-context-elisp-subst-numbered-special-args (expr-str c special-arg-str)
   (let ((pattern (format "%s[0-9]+" special-arg-str)))
-    (flet ((match-f (m)
-                    (prin1-to-string (elt c (string-to-number (subseq m 1))))))
-      (replace-regexp-in-string pattern 'match-f expr-str t))))
+    (cl-flet ((match-f (m)
+                    (prin1-to-string (elt c (string-to-number (cl-subseq m 1))))))
+      (replace-regexp-in-string pattern #'match-f expr-str t))))
 
 (defun evalator-context-elisp-subst-identity-special-args (expr-str c special-arg-str)
   (replace-regexp-in-string special-arg-str (prin1-to-string c) expr-str t))

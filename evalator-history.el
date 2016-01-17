@@ -1,3 +1,4 @@
+(require 'cl-lib)
 (require 'evalator-utils)
 (require 'evalator-state)
 (require 'helm)
@@ -15,7 +16,7 @@
 history index."
   (evalator-utils-put! evalator-state
                        :history
-                       (vconcat (subseq (evalator-history) 0 (+ 1 (evalator-history-index)))
+                       (vconcat (cl-subseq (evalator-history) 0 (+ 1 (evalator-history-index)))
                                 (list (list :candidates candidates :expression expression))))
   (evalator-utils-put! evalator-state :history-index (+ 1 (evalator-history-index))))
 
@@ -33,4 +34,3 @@ since that is always an empty string."
         (plist-get evalator-state :history))))
 
 (provide 'evalator-history)
-

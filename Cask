@@ -12,5 +12,5 @@
  (depends-on "ecukes")
  (depends-on "ert-runner")
  (depends-on "el-mock")
- (depends-on "helm")
+ (depends-on "noflet")
 )

@@ -1,11 +1,11 @@
-(require 'ert)
+(require 'noflet)
 (require 'evalator)
 
 (ert-deftest evalator-action-previous-and-next-tests ()
   (let ((evalator-state (list :history [(:candidates '())
                                         (:candidates '())]
                               :history-index 0)))
-    (flet ((evalator-unmark-all () nil)
+    (noflet ((evalator-unmark-all () nil)
            (helm-set-pattern (_) nil)
            (helm-update () nil))
       
@@ -25,19 +25,19 @@
   (let ((helm-pattern "bar")
         (evalator-state (list :history []
                               :history-index -1)))
-    (flet ((evalator-unmark-all () nil)
+    (noflet ((evalator-unmark-all () nil)
            (slot-value (_o _s) nil)
            (helm-set-pattern (p) (setq helm-pattern p)))
 
       ;;When transform-candidates returns non-nil the candidates are pushed on history
-      (flet ((evalator-make-or-transform-candidates (&rest _) '("foo")))
+      (noflet ((evalator-make-or-transform-candidates (&rest _) '("foo")))
         (evalator-action-confirm)
         (should (equal (list :candidates '("foo")
                              :expression "bar")
                        (evalator-history-current))))
       
       ;;Otherwise nothing is done
-      (flet ((evalator-make-or-transform-candidates (&rest args) nil))
+      (noflet ((evalator-make-or-transform-candidates (&rest args) nil))
         (evalator-action-confirm)
         (should (equal (list :candidates '("foo")
                              :expression "bar")
@@ -63,7 +63,7 @@
   (let ((evalator-key-map (list 'evalator-action-previous           "C-l"
                                 'evalator-action-confirm            "RET"
                                 'evalator-action-insert-special-arg "C-;")))
-    (flet ((where-is-internal (command key-map _) (plist-get key-map command))
+    (noflet ((where-is-internal (command key-map _) (plist-get key-map command))
            (key-description (str) str))
       (should (equal (concat "History forward, "
                              "C-l: History backward, "
@@ -86,7 +86,7 @@
                                         (:candidates ("bar"))]
                               :history-index 0))
         (flash-status nil))
-    (flet ((evalator-marked-candidates () nil)
+    (noflet ((evalator-marked-candidates () nil)
            (evalator-flash (status) (setq flash-status status)))
       (let ((make-f (lambda (bad-expr _mode _initial-p)
                       (if bad-expr
@@ -131,7 +131,7 @@
   (let ((state-init-p nil)
         (history nil)
         (evalator-candidates-initial '("foo")))
-    (flet ((evalator-state-init (_)
+    (noflet ((evalator-state-init (_)
                                 (setq state-init-p t))
            (evalator-history-push! (cands expr)
                                    (setq history (list :candidates cands

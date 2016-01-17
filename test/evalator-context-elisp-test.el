@@ -84,7 +84,7 @@
                  (tc '("\"foo\"" "\"bar\"" "\"baz\"") nil "(concat Ⓔ \"1\")" :normal)))
 
   (should (equal '("4")
-                 (tc '("0" "1" "2" "3") '("1" "3") "(reduce '+ 'Ⓔ)" :normal)))
+                 (tc '("0" "1" "2" "3") '("1" "3") "(cl-reduce '+ 'Ⓔ)" :normal)))
 
   (should (equal '("\"foobar\"")
                  (tc '("\"foo\"" "\"bar\"") '("\"foo\"" "\"bar\"") "(concat Ⓔ0 Ⓔ1)" :normal))))
