@@ -120,10 +120,13 @@ is returned."
   (let ((cands-all (evalator-history-current :candidates))
         (cands-marked (evalator-marked-candidates)))
     (condition-case err
-        (progn (evalator-flash :success)
-               (if (equal 0 (evalator-history-index))
-                   (funcall make-f expr mode t)
-                 (funcall transform-f cands-all cands-marked expr mode)))
+        (progn
+          (if (equal "" expr)
+              (signal 'e '(""))
+            (progn (evalator-flash :success)
+                   (if (equal 0 (evalator-history-index))
+                       (funcall make-f expr mode t)
+                     (funcall transform-f cands-all cands-marked expr mode)))))
       (error
        (if err-handler
            (funcall err-handler (prin1-to-string err))
