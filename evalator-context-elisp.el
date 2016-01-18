@@ -64,9 +64,9 @@
 Accepts a list of expressions, EXPRS, and return the equivalent
 expression by substituting any special args with the expression
 before it."
-  (let* ((spec-arg (evalator-context-get-special-arg evalator-context-elisp))
+  (let* ((pattern (format "'?%s" (evalator-context-elisp-get-special-arg)))
          (sub (lambda (e1 e2)
-                (replace-regexp-in-string spec-arg e1 e2 t))))
+                (replace-regexp-in-string pattern e1 e2 t))))
     (cl-reduce sub exprs)))
 
 (defun evalator-context-elisp-subst-numbered-special-args (expr-str c)
