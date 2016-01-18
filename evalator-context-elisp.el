@@ -54,6 +54,10 @@
    :transform-candidates
    'evalator-context-elisp-transform-candidates))
 
+(defun evalator-context-elisp-get-special-arg ()
+  "Return special arg from elisp context."
+  (evalator-context-get-special-arg evalator-context-elisp))
+
 (defun evalator-context-elisp-make-equiv-expr (exprs)
   "Create an equivalent expression string from EXPRS.
 
@@ -65,24 +69,23 @@ before it."
                 (replace-regexp-in-string spec-arg e1 e2 t))))
     (cl-reduce sub exprs)))
 
-(defun evalator-context-elisp-subst-numbered-special-args (expr-str c special-arg-str)
+(defun evalator-context-elisp-subst-numbered-special-args (expr-str c)
   ""
-  (let ((pattern (format "%s[0-9]+" special-arg-str)))
+  (let ((pattern (format "%s[0-9]+" (evalator-context-elisp-get-special-arg))))
     (cl-flet ((match-f (m)
-                    (prin1-to-string (elt c (string-to-number (cl-subseq m 1))))))
+                       (prin1-to-string (elt c (string-to-number (cl-subseq m 1))))))
       (replace-regexp-in-string pattern #'match-f expr-str t))))
 
-(defun evalator-context-elisp-subst-identity-special-args (expr-str c special-arg-str)
+(defun evalator-context-elisp-subst-identity-special-args (expr-str c)
   ""
-  (replace-regexp-in-string special-arg-str (prin1-to-string c) expr-str t))
+  (let ((sa (evalator-context-elisp-get-special-arg)))
+    (replace-regexp-in-string sa (prin1-to-string c) expr-str t)))
 
-
-(defun evalator-context-elisp-subst-special-args (expr-str c special-arg-str)
+(defun evalator-context-elisp-subst-special-args (expr-str c)
   ""
   ;;TODO this is ugly
   (evalator-context-elisp-subst-identity-special-args
-   (evalator-context-elisp-subst-numbered-special-args expr-str c special-arg-str)
-   c special-arg-str))
+   (evalator-context-elisp-subst-numbered-special-args expr-str c) c))
 
 (defun evalator-context-elisp-make-candidates (input mode initial-p)
   "Convert INPUT into a valid list of helm candidates.
@@ -125,8 +128,7 @@ list whose size is equal to the size of the collection."
   "Evaluate the expression string, EXPR-STR.
 Substitutes any special args in EXPR-STR, with candidate C(or the
 element within C) and evaluates the final expression."
-  (let ((special-arg-str (evalator-context-get-special-arg evalator-context-elisp)))
-    (eval (read (evalator-context-elisp-subst-special-args expr-str c special-arg-str)))))
+  (eval (read (evalator-context-elisp-subst-special-args expr-str c))))
 
 (provide 'evalator-context-elisp)
 

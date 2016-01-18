@@ -38,21 +38,20 @@
                  (evalator-context-elisp-eval "(+ 1 1)" nil))))
 
 (ert-deftest evalator-context-elisp-subst-special-args ()
-  (let ((sa evalator-context-elisp-special-arg))
-    (should (equal "'(+ 1 1)"
-                   (ssa "'(+ 1 1)" nil sa)))
+  (should (equal "'(+ 1 1)"
+                 (ssa "'(+ 1 1)" nil)))
 
-    (should (equal "'(+ 1 1)"
-                   (ssa "'(+ 1 Ⓔ)" 1 sa)))
+  (should (equal "'(+ 1 1)"
+                 (ssa "'(+ 1 Ⓔ)" 1)))
 
-    (should (equal "'(+ 1 1)"
-                   (ssa "'(+ 1 Ⓔ0)" '(1 2 3) sa)))
+  (should (equal "'(+ 1 1)"
+                 (ssa "'(+ 1 Ⓔ0)" '(1 2 3))))
 
-    (should (equal "'(+ 1 (+ 1 (+ 1 (+ 1 (+ 1 1)))))"
-                   (ssa "'(+ 1 (+ 1 (+ 1 (+ 1 (+ 1 Ⓔ0)))))" [1 2 3] sa)))
+  (should (equal "'(+ 1 (+ 1 (+ 1 (+ 1 (+ 1 1)))))"
+                 (ssa "'(+ 1 (+ 1 (+ 1 (+ 1 (+ 1 Ⓔ0)))))" [1 2 3])))
 
-    (should (equal "1"
-                   (ssa "Ⓔ" 1 sa)))))
+  (should (equal "1"
+                 (ssa "Ⓔ" 1))))
 
 (ert-deftest evalator-context-elisp-make-candidates-tests ()
   ;;normal mode
