@@ -5,7 +5,7 @@
 
 (files "*.el")
 
-(depends-on "helm")
+(depends-on "helm-core" "1.9.1")
 
 (development
  (depends-on "f")
