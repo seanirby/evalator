@@ -104,16 +104,16 @@
 
 (ert-deftest evalator-context-elisp-transform-candidates-tests ()
   (should (equal '("1" "2" "3" "4")
-                 (tc '("0" "1" "2" "3") nil "(+ 1 Ⓔ)" :normal)))
+                 (tc '("0" "1" "2" "3") "(+ 1 Ⓔ)" :normal)))
 
   (should (equal '("\"foo1\"" "\"bar1\"" "\"baz1\"")
-                 (tc '("\"foo\"" "\"bar\"" "\"baz\"") nil "(concat Ⓔ \"1\")" :normal)))
+                 (tc '("\"foo\"" "\"bar\"" "\"baz\"") "(concat Ⓔ \"1\")" :normal)))
 
   (should (equal '("4")
-                 (tc '("0" "1" "2" "3") '("1" "3") "(cl-reduce '+ 'Ⓔ)" :normal)))
+                 (tc '("1" "3") "(cl-reduce '+ 'Ⓔ)" :normal t)))
 
   (should (equal '("\"foobar\"")
-                 (tc '("\"foo\"" "\"bar\"") '("\"foo\"" "\"bar\"") "(concat Ⓔ0 Ⓔ1)" :normal))))
+                 (tc '("\"foo\"" "\"bar\"") "(concat Ⓔ0 Ⓔ1)" :normal t))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; evalator-context-elisp-test.el ends here

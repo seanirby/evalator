@@ -67,24 +67,27 @@ and length.  Will be used to generate the evalator prompt")
     (helm-set-pattern "")
     (helm-update)))
 
-(defun evalator-action-confirm ()
+(defun evalator-action-confirm (&optional f-and-args)
   "Transform current candidates.
 If successful, pushes the result onto the evalator history."
   (interactive)
   (let* ((err-handler (lambda (err-str)
-                        (evalator-flash :error)
                         (message (concat "Error: " err-str))
                         nil))
-         (candidates (evalator-make-or-transform-candidates
-                      helm-pattern
-                      (plist-get evalator-state :mode)
-                      (slot-value (plist-get evalator-state :context) :make-candidates)
-                      (slot-value (plist-get evalator-state :context) :transform-candidates)
-                      err-handler)))
-    (when candidates
-      (evalator-history-push! candidates helm-pattern)
+         (cands (evalator-candidate-transformer f-and-args err-handler)))
+    (when cands
+      (evalator-history-push! cands helm-pattern)
       (evalator-unmark-all)
       (helm-set-pattern ""))))
+
+(defun evalator-action-confirm-collect ()
+  ""
+  (interactive)
+  (let* ((f (slot-value (plist-get evalator-state :context) :transform-candidates))
+         (expr helm-pattern)
+         (mode (plist-get evalator-state :mode))
+         (args (list (evalator-get-candidates) expr mode t)))
+    (evalator-action-confirm (list f args))))
 
 (defun evalator-action-insert-special-arg ()
   "Insert the special evalator arg into the expression prompt."
@@ -128,7 +131,13 @@ If successful, pushes the result onto the evalator history."
             (f 'evalator-action-confirm) ": Accept transformation, "
             (f 'evalator-action-insert-special-arg) ": Insert special arg")))
 
-(defun evalator-make-or-transform-candidates (expr mode make-f transform-f &optional err-handler)
+(defun evalator-get-candidates ()
+  ""
+  (let ((cands-all (evalator-history-current :candidates))
+        (cands-marked (evalator-marked-candidates)))
+    (or cands-marked cands-all)))
+
+(defun evalator-try-context-candidate-f (context-f args err-handler)
   "Call the context's `:make-candidates' or `:transform-candidates' function.
 Attempt to make or transform the current evalator candidates according
 to the input expression EXPR and mode MODE.  Arguments MAKE-F and
@@ -139,34 +148,37 @@ TRANSFORM-F is called.  If optional arg, ERR-HANDLER, is nil and the
 operation fails the current evalator candidates are returned.
 Otherwise, ERR-HANDLER is called with the error string and that result
 is returned."
-  (let ((cands-all (evalator-history-current :candidates))
-        (cands-marked (evalator-marked-candidates)))
-    (condition-case err
-        (progn
-          (if (equal "" expr)
-              (signal 'evalator-error '("Empty Expression"))
-            (progn (evalator-flash :success)
-                   (if (equal 0 (evalator-history-index))
-                       (funcall make-f expr mode t)
-                     (funcall transform-f cands-all cands-marked expr mode)))))
-      (error
-       (if err-handler
-           (funcall err-handler (prin1-to-string err))
-         (progn
-           (evalator-flash :error)
-           cands-all))))))
+  (condition-case err
+      (progn
+        (if (equal "" helm-pattern)
+            (signal 'evalator-error '("Empty Expression"))
+          (progn (evalator-flash :success)
+                 (apply context-f args))))
+    (error
+     (evalator-flash :error)
+     (if err-handler
+         (funcall err-handler (prin1-to-string err))
+       (evalator-history-current :candidates)))))
+
+(defun evalator-candidate-transformer (&optional f-and-args err-handler)
+  "Can specify your own F-AND-ARGS list."
+  (with-helm-current-buffer
+    (if f-and-args
+        (apply 'evalator-try-context-candidate-f (append f-and-args (list err-handler)))
+      (let* ((make-f      (slot-value (plist-get evalator-state :context) :make-candidates))
+             (transform-f (slot-value (plist-get evalator-state :context) :transform-candidates))
+             (expr        helm-pattern)
+             (mode        (plist-get evalator-state :mode))
+             (f-and-args  (if (equal 0 (evalator-history-index))
+                              (list make-f (list expr mode t) err-handler)
+                            (list transform-f (list (evalator-get-candidates) expr mode) err-handler))))
+        (apply 'evalator-try-context-candidate-f f-and-args)))))
 
 (defun evalator-build-source (candidates mode)
   "Build the source for a evalator session using a CANDIDATES list and a MODE."
   (helm-build-sync-source (concat "Evaluation Result" (when (equal :explicit mode) "(Explicit)"))
     :candidates candidates
-    :filtered-candidate-transformer (lambda (_candidates _source)
-                                      (with-helm-current-buffer
-                                        (evalator-make-or-transform-candidates
-                                         helm-pattern
-                                         (plist-get evalator-state :mode)
-                                         (slot-value (plist-get evalator-state :context) :make-candidates)
-                                         (slot-value (plist-get evalator-state :context) :transform-candidates))))
+    :filtered-candidate-transformer (lambda (_c _s) (evalator-candidate-transformer))
     :keymap evalator-key-map
     :nohighlight t
     :nomark (equal :explicit mode)

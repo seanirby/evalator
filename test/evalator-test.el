@@ -26,6 +26,9 @@
 
 
 (require 'noflet)
+(require 'el-mock)
+(eval-when-compile
+  (require 'cl))
 (require 'evalator)
 
 (ert-deftest evalator-prompt-f-tests ()
@@ -55,26 +58,19 @@
             (should (equal 0   (evalator-history-index))))))
 
 (ert-deftest evalator-action-confirm-test ()
-  (let ((helm-pattern "bar")
-        (evalator-state (list :history []
-                              :history-index -1)))
-    (noflet ((evalator-unmark-all () nil)
-             (slot-value (_o _s) nil)
-             (helm-set-pattern (p) (setq helm-pattern p)))
-
-            ;;When transform-candidates returns non-nil the candidates are pushed on history
-            (noflet ((evalator-make-or-transform-candidates (&rest _) '("foo")))
-                    (evalator-action-confirm)
-                    (should (equal (list :candidates '("foo")
-                                         :expression "bar")
-                                   (evalator-history-current))))
-            
-            ;;Otherwise nothing is done
-            (noflet ((evalator-make-or-transform-candidates (&rest args) nil))
-                    (evalator-action-confirm)
-                    (should (equal (list :candidates '("foo")
-                                         :expression "bar")
-                                   (evalator-history-current)))))))
+  (let ((helm-pattern "foo"))
+    ;;Successful transformation
+    (with-mock
+     (mock (evalator-candidate-transformer * *) => t)
+     (mock (evalator-history-push! * *) :times 1)
+     (mock (evalator-unmark-all) :times 1)
+     (mock (helm-set-pattern "") :times 1 => t)
+     (evalator-action-confirm))
+    ;;Unsuccessful transformation
+    (with-mock
+     (mock (evalator-candidate-transformer * *) => nil)
+     (should (equal nil
+                    (evalator-action-confirm))))))
 
 (ert-deftest evalator-action-insert-special-arg-test ()
   (let ((evalator-context-special-arg-default "Ⓔ"))
@@ -92,7 +88,7 @@
 ;; TODO
 (ert-deftest evalator-marked-candidates ())
 
-(ert-deftest evalator-mpersistent-help-test ()
+(ert-deftest evalator-persistent-help-test ()
   (let ((evalator-key-map (list 'evalator-action-previous           "C-l"
                                 'evalator-action-confirm            "RET"
                                 'evalator-action-insert-special-arg "C-;")))
@@ -114,44 +110,43 @@
     (should (equal "Evaluation Result(Explicit)"
                    (cdr (assoc 'name args-explicit))))))
 
-(ert-deftest evalator-make-or-transform-candidates-test ()
-  (let ((evalator-state (list :history [(:candidates ("foo"))
-                                        (:candidates ("bar"))]
-                              :history-index 0))
-        (flash-status nil))
-    (noflet ((evalator-marked-candidates () nil)
-             (evalator-flash (status) (setq flash-status status)))
-            (let ((make-f (lambda (bad-expr _mode _initial-p)
-                            (if bad-expr
-                                (eval (read bad-expr))
-                              "make-f-called")))
-                  (transform-f (lambda (_cands-all _cands-marked bad-expr _mode)
-                                 (if bad-expr
-                                     (eval (read bad-expr))
-                                   "transform-f-called"))))
-              ;; make-f is called at index 0
-              (should (equal "make-f-called"
-                             (evalator-make-or-transform-candidates nil nil make-f transform-f)))
+(ert-deftest evalator-get-candidates-test ()
+  (with-mock
+   (mock (evalator-history-current :candidates) => '("cand-1" "cand-2"))
+   (mock (evalator-marked-candidates) => nil)
+   (should (equal '("cand-1" "cand-2")
+                  (evalator-get-candidates))))
+  (with-mock
+   (mock (evalator-history-current :candidates) => '("cand-1" "cand-2"))
+   (mock (evalator-marked-candidates) => '("cand-2"))
+   (should (equal '("cand-2")
+                  (evalator-get-candidates)))))
 
-              (should (equal :success flash-status))
+(ert-deftest evalator-try-context-candidate-f-test ()
+  ;; successful call
+  (let ((helm-pattern "(non-empty expression)")
+        (context-f   (lambda (&rest args) t)))
+    (with-mock
+     (mock (evalator-flash :success) :times 1)
+     (evalator-try-context-candidate-f context-f nil nil)))
+  ;; trigger error because of empty pattern
+  (let ((helm-pattern "")
+        (context-f    (lambda (&rest args) t)))
+    (with-mock
+     (mock (evalator-flash :error) :times 1)
+     (mock (evalator-history-current :candidates) :times 1 => t)
+     (evalator-try-context-candidate-f context-f nil nil)))
+  ;; error handler gets called
+  (let ((helm-pattern "(non-empty expression)")
+        (context-f    (lambda (&rest args) (signal 'evalator-error '(""))))
+        (err-handler  (lambda (_) t)))
+    (with-mock
+     ;; Flashes :success then :error
+     (mock (evalator-flash *) :times 2)
+     (evalator-try-context-candidate-f context-f nil err-handler))))
 
-              (should (equal '("foo")
-                             (evalator-make-or-transform-candidates "(list 1" nil make-f transform-f)))
-
-              (should (equal :error flash-status))
-
-              (setq evalator-state (plist-put evalator-state :history-index 1))
-              
-              ;; transform-f called otherwise
-              (should (equal "transform-f-called"
-                             (evalator-make-or-transform-candidates nil nil make-f transform-f)))
-
-              (should (equal :success flash-status))
-
-              (should (equal '("bar")
-                             (evalator-make-or-transform-candidates "(list 1" nil make-f transform-f)))
-
-              (should (equal :error flash-status))))))
+;; TODO
+(ert-deftest evalator-candidate-transformer ())
 
 (ert-deftest evalator-insert-equiv-expr-test ()
   (let ((expr-chain '("(list 1 2 3)" "(reduce '+ Ⓔ)" "(+ Ⓔ 1)")))

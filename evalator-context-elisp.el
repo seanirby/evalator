@@ -111,18 +111,13 @@ list whose size is equal to the size of the collection."
      ((and (not (stringp data)) (sequencep data)) (mapcar to-obj-string data))
      (t (list (funcall to-obj-string data))))))
 
-(defun evalator-context-elisp-transform-candidates (candidates-all candidates-marked expr-str mode)
+(defun evalator-context-elisp-transform-candidates (cands expr-str mode &optional collect-p)
   ""
-  (evalator-context-elisp-make-candidates
-   (if (equal nil candidates-marked)
-       (mapcar (lambda (candidate)
-                 (evalator-context-elisp-eval expr-str
-                                              (read candidate)))
-               candidates-all)
-     (evalator-context-elisp-eval expr-str
-                                  (mapcar 'read candidates-marked)))
-   mode
-   nil))
+  (let ((cands-xfrmd (if collect-p
+                         (evalator-context-elisp-eval expr-str (mapcar 'read cands))
+                       (mapcar (lambda (c)
+                                 (evalator-context-elisp-eval expr-str (read c))) cands))))
+    (evalator-context-elisp-make-candidates cands-xfrmd mode nil)))
 
 (defun evalator-context-elisp-eval (expr-str c)
   "Evaluate the expression string, EXPR-STR.
