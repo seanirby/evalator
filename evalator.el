@@ -42,6 +42,12 @@
 (defvar evalator-error nil)
 (put 'evalator-error 'error-conditions '(error))
 
+(defvar evalator-prompt-f
+  (lambda ()
+    (format "%s of %s" (+ 1 (evalator-history-index)) (length (evalator-history))))
+  "Points to a function that is called with the current history index
+and length.  Will be used to generate the evalator prompt") 
+
 (defun evalator-action-previous ()
   "Go to the next history state and update the evalator session."
   (interactive)
@@ -121,23 +127,6 @@ If successful, pushes the result onto the evalator history."
             (f 'evalator-action-confirm) ": Accept transformation, "
             (f 'evalator-action-insert-special-arg) ": Insert special arg")))
 
-(defun evalator-build-source (candidates mode)
-  "Build the source for a evalator session using a CANDIDATES list and a MODE."
-  (helm-build-sync-source (concat "Evaluation Result" (when (equal :explicit mode) "(Explicit)"))
-    :candidates candidates
-    :filtered-candidate-transformer (lambda (_candidates _source)
-                                      (with-helm-current-buffer
-                                        (evalator-make-or-transform-candidates
-                                         helm-pattern
-                                         (plist-get evalator-state :mode)
-                                         (slot-value (plist-get evalator-state :context) :make-candidates)
-                                         (slot-value (plist-get evalator-state :context) :transform-candidates))))
-    :keymap evalator-key-map
-    :nohighlight t
-    :nomark (equal :explicit mode)
-    :persistent-help (evalator-persistent-help)
-    :volatile t))
-
 (defun evalator-make-or-transform-candidates (expr mode make-f transform-f &optional err-handler)
   "Call the context's `:make-candidates' or `:transform-candidates' function.
 Attempt to make or transform the current evalator candidates according
@@ -166,6 +155,32 @@ is returned."
            (evalator-flash :error)
            cands-all))))))
 
+(defun evalator-build-source (candidates mode)
+  "Build the source for a evalator session using a CANDIDATES list and a MODE."
+  (helm-build-sync-source (concat "Evaluation Result" (when (equal :explicit mode) "(Explicit)"))
+    :candidates candidates
+    :filtered-candidate-transformer (lambda (_candidates _source)
+                                      (with-helm-current-buffer
+                                        (evalator-make-or-transform-candidates
+                                         helm-pattern
+                                         (plist-get evalator-state :mode)
+                                         (slot-value (plist-get evalator-state :context) :make-candidates)
+                                         (slot-value (plist-get evalator-state :context) :transform-candidates))))
+    :keymap evalator-key-map
+    :nohighlight t
+    :nomark (equal :explicit mode)
+    :persistent-help (evalator-persistent-help)
+    :volatile t))
+
+(defun evalator-build-history-source ()
+  "Build a source that will show the current point in history."
+  (helm-build-dummy-source "Evalator History"
+    :filtered-candidate-transformer (lambda (_c _s)
+                                      (list (funcall evalator-prompt-f)))
+    :header-line "History"
+    :nomark t
+    :nohighlight t))
+
 (defun evalator-insert-equiv-expr (&optional exprs)
   "Insert the equivalent expression of the previous evalator session.
 If EXPRS is nil then the expression list will be retrieved from the
@@ -185,9 +200,15 @@ evalator-history will be used instead."
   (interactive)
   (evalator-state-init mode)
   (evalator-history-push! evalator-candidates-initial "")
+  (let* ((helm-after-update-hook (copy-sequence helm-after-update-hook))
+         (history-source (evalator-build-history-source))
+         (result-source (evalator-build-source evalator-candidates-initial mode)))
 
-  (let* ((source (evalator-build-source evalator-candidates-initial mode)))
-    (helm :sources source
+    ;; Prevent history candidate from being selected
+    (add-hook 'helm-after-update-hook (lambda ()
+                                        (helm-next-line)))
+    
+    (helm :sources (list history-source result-source)
           :buffer "*helm-evalator*"
           :prompt "Enter Expression:")))
 

@@ -28,6 +28,12 @@
 (require 'noflet)
 (require 'evalator)
 
+(ert-deftest evalator-prompt-f-tests ()
+  (noflet ((evalator-history-index () 0)
+           (evalator-history () '(length of 3)))
+          (should (equal "1 of 3"
+                         (funcall evalator-prompt-f)))))
+
 (ert-deftest evalator-action-previous-and-next-tests ()
   (let ((evalator-state (list :history [(:candidates '())
                                         (:candidates '())]
