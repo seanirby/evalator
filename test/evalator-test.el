@@ -39,42 +39,42 @@
                                         (:candidates '())]
                               :history-index 0)))
     (noflet ((evalator-unmark-all () nil)
-           (helm-set-pattern (_) nil)
-           (helm-update () nil))
-      
-      (evalator-action-previous)
-      (should (equal 0 (evalator-history-index)))
+             (helm-set-pattern (_) nil)
+             (helm-update () nil))
+            
+            (evalator-action-previous)
+            (should (equal 0 (evalator-history-index)))
 
-      (evalator-action-next)
-      (should (equal 1   (evalator-history-index)))
+            (evalator-action-next)
+            (should (equal 1   (evalator-history-index)))
 
-      (evalator-action-next)
-      (should (equal 1 (evalator-history-index)))
+            (evalator-action-next)
+            (should (equal 1 (evalator-history-index)))
 
-      (evalator-action-previous)
-      (should (equal 0   (evalator-history-index))))))
+            (evalator-action-previous)
+            (should (equal 0   (evalator-history-index))))))
 
 (ert-deftest evalator-action-confirm-test ()
   (let ((helm-pattern "bar")
         (evalator-state (list :history []
                               :history-index -1)))
     (noflet ((evalator-unmark-all () nil)
-           (slot-value (_o _s) nil)
-           (helm-set-pattern (p) (setq helm-pattern p)))
+             (slot-value (_o _s) nil)
+             (helm-set-pattern (p) (setq helm-pattern p)))
 
-      ;;When transform-candidates returns non-nil the candidates are pushed on history
-      (noflet ((evalator-make-or-transform-candidates (&rest _) '("foo")))
-        (evalator-action-confirm)
-        (should (equal (list :candidates '("foo")
-                             :expression "bar")
-                       (evalator-history-current))))
-      
-      ;;Otherwise nothing is done
-      (noflet ((evalator-make-or-transform-candidates (&rest args) nil))
-        (evalator-action-confirm)
-        (should (equal (list :candidates '("foo")
-                             :expression "bar")
-                       (evalator-history-current)))))))
+            ;;When transform-candidates returns non-nil the candidates are pushed on history
+            (noflet ((evalator-make-or-transform-candidates (&rest _) '("foo")))
+                    (evalator-action-confirm)
+                    (should (equal (list :candidates '("foo")
+                                         :expression "bar")
+                                   (evalator-history-current))))
+            
+            ;;Otherwise nothing is done
+            (noflet ((evalator-make-or-transform-candidates (&rest args) nil))
+                    (evalator-action-confirm)
+                    (should (equal (list :candidates '("foo")
+                                         :expression "bar")
+                                   (evalator-history-current)))))))
 
 (ert-deftest evalator-action-insert-special-arg-test ()
   (let ((evalator-context-special-arg-default "Ⓔ"))
@@ -97,12 +97,12 @@
                                 'evalator-action-confirm            "RET"
                                 'evalator-action-insert-special-arg "C-;")))
     (noflet ((where-is-internal (command key-map _) (plist-get key-map command))
-           (key-description (str) str))
-      (should (equal (concat "History forward, "
-                             "C-l: History backward, "
-                             "RET: Accept transformation, "
-                             "C-;: Insert special arg")
-                     (evalator-persistent-help))))))
+             (key-description (str) str))
+            (should (equal (concat "History forward, "
+                                   "C-l: History backward, "
+                                   "RET: Accept transformation, "
+                                   "C-;: Insert special arg")
+                           (evalator-persistent-help))))))
 
 ;; Tried to mock the helm-build-sync-source macro but ran into issues
 ;; This works for now...
@@ -120,38 +120,38 @@
                               :history-index 0))
         (flash-status nil))
     (noflet ((evalator-marked-candidates () nil)
-           (evalator-flash (status) (setq flash-status status)))
-      (let ((make-f (lambda (bad-expr _mode _initial-p)
-                      (if bad-expr
-                          (eval (read bad-expr))
-                        "make-f-called")))
-            (transform-f (lambda (_cands-all _cands-marked bad-expr _mode)
-                           (if bad-expr
-                               (eval (read bad-expr))
-                             "transform-f-called"))))
-        ;; make-f is called at index 0
-        (should (equal "make-f-called"
-                       (evalator-make-or-transform-candidates nil nil make-f transform-f)))
+             (evalator-flash (status) (setq flash-status status)))
+            (let ((make-f (lambda (bad-expr _mode _initial-p)
+                            (if bad-expr
+                                (eval (read bad-expr))
+                              "make-f-called")))
+                  (transform-f (lambda (_cands-all _cands-marked bad-expr _mode)
+                                 (if bad-expr
+                                     (eval (read bad-expr))
+                                   "transform-f-called"))))
+              ;; make-f is called at index 0
+              (should (equal "make-f-called"
+                             (evalator-make-or-transform-candidates nil nil make-f transform-f)))
 
-        (should (equal :success flash-status))
+              (should (equal :success flash-status))
 
-        (should (equal '("foo")
-                       (evalator-make-or-transform-candidates "(list 1" nil make-f transform-f)))
+              (should (equal '("foo")
+                             (evalator-make-or-transform-candidates "(list 1" nil make-f transform-f)))
 
-        (should (equal :error flash-status))
+              (should (equal :error flash-status))
 
-        (setq evalator-state (plist-put evalator-state :history-index 1))
-        
-        ;; transform-f called otherwise
-        (should (equal "transform-f-called"
-                       (evalator-make-or-transform-candidates nil nil make-f transform-f)))
+              (setq evalator-state (plist-put evalator-state :history-index 1))
+              
+              ;; transform-f called otherwise
+              (should (equal "transform-f-called"
+                             (evalator-make-or-transform-candidates nil nil make-f transform-f)))
 
-        (should (equal :success flash-status))
+              (should (equal :success flash-status))
 
-        (should (equal '("bar")
-                       (evalator-make-or-transform-candidates "(list 1" nil make-f transform-f)))
+              (should (equal '("bar")
+                             (evalator-make-or-transform-candidates "(list 1" nil make-f transform-f)))
 
-        (should (equal :error flash-status))))))
+              (should (equal :error flash-status))))))
 
 (ert-deftest evalator-insert-equiv-expr-test ()
   (let ((expr-chain '("(list 1 2 3)" "(reduce '+ Ⓔ)" "(+ Ⓔ 1)")))
@@ -165,22 +165,23 @@
         (history nil)
         (evalator-candidates-initial '("foo")))
     (noflet ((evalator-state-init (_)
-                                (setq state-init-p t))
-           (evalator-history-push! (cands expr)
-                                   (setq history (list :candidates cands
-                                                       :expression expr)))
-           (evalator-build-source (cands mode) `(,cands ,mode))
-           (helm (&rest args) (cadr args)))
+                                  (setq state-init-p t))
+             (evalator-history-push! (cands expr)
+                                     (setq history (list :candidates cands
+                                                         :expression expr)))
+             (evalator-build-history-source () '())
+             (evalator-build-source (cands mode) `(,cands ,mode))
+             (helm (&rest args) (cadr args)))
 
-      ;;helm should be called with the result from evalator-build-source as the :source
-      (should (equal '(("foo") :explicit)
-                     (evalator :explicit)))
+            ;;helm should be called with the result from evalator-build-source as the :source
+            (should (equal '(() (("foo") :explicit))
+                           (evalator :explicit)))
 
-      (should state-init-p)
+            (should state-init-p)
 
-      (should (equal (list :candidates '("foo")
-                           :expression "")
-                     history)))))
+            (should (equal (list :candidates '("foo")
+                                 :expression "")
+                           history)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; evalator-test.el ends here
