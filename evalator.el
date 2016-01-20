@@ -84,9 +84,9 @@ If successful, pushes the result onto the evalator history."
   ""
   (interactive)
   (let* ((f (slot-value (plist-get evalator-state :context) :transform-candidates))
-         (expr helm-pattern)
+         (expr-str helm-pattern)
          (mode (plist-get evalator-state :mode))
-         (args (list (evalator-get-candidates) expr mode t)))
+         (args (list (evalator-get-candidates) expr-str mode t)))
     (evalator-action-confirm (list f args))))
 
 (defun evalator-action-insert-special-arg ()
@@ -167,11 +167,11 @@ is returned."
         (apply 'evalator-try-context-candidate-f (append f-and-args (list err-handler)))
       (let* ((make-f      (slot-value (plist-get evalator-state :context) :make-candidates))
              (transform-f (slot-value (plist-get evalator-state :context) :transform-candidates))
-             (expr        helm-pattern)
+             (expr-str    helm-pattern)
              (mode        (plist-get evalator-state :mode))
              (f-and-args  (if (equal 0 (evalator-history-index))
-                              (list make-f (list expr mode t) err-handler)
-                            (list transform-f (list (evalator-get-candidates) expr mode) err-handler))))
+                              (list make-f (list expr-str mode t) err-handler)
+                            (list transform-f (list (evalator-get-candidates) expr-str mode) err-handler))))
         (apply 'evalator-try-context-candidate-f f-and-args)))))
 
 (defun evalator-build-source (candidates mode)
