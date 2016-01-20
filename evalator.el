@@ -35,6 +35,7 @@
 (require 'evalator-history)
 (require 'evalator-key-map)
 (require 'evalator-state)
+(require 'evalator-utils)
 (require 'helm)
 
 
