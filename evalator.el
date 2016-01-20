@@ -31,6 +31,7 @@
 
 (require 'cl-lib)
 (require 'evalator-context)
+(require 'evalator-context-elisp)
 (require 'evalator-faces)
 (require 'evalator-history)
 (require 'evalator-key-map)
@@ -66,6 +67,21 @@ and length.  Will be used to generate the evalator prompt")
     (evalator-unmark-all)
     (helm-set-pattern "")
     (helm-update)))
+
+(defun evalator-action-execute-in-elisp ()
+  ""
+  (interactive)
+  (let* ((spec-arg-elisp (evalator-context-get-special-arg evalator-context-elisp))
+         (spec-arg-curr  (evalator-context-get-special-arg (plist-get evalator-state :context)))
+         (expr-str (if (equal spec-arg-elisp spec-arg-curr)
+                       helm-pattern
+                     (replace-regexp-in-string spec-arg-curr spec-arg-elisp helm-pattern))))
+    (condition-case err
+        (message
+         (prin1-to-string
+          (evalator-context-elisp-transform-candidates (evalator-get-candidates) expr-str nil)))
+      (error
+       (message err)))))
 
 (defun evalator-action-confirm (&optional f-and-args)
   "Transform current candidates.
