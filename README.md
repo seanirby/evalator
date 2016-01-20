@@ -10,6 +10,13 @@ Evalator is an Emacs plugin built on top of Helm that allows for interactive eva
 * Interact with Emacs from a non-Elisp environment
 
 Lets go through a few examples to see what Evalator can do.
+ (setq browse-url-browser-function 'w3m-browse-url)
+
+### Example 1 ###
+![prime-example](example-gifs/primes.gif)
+
+In the example above an evalator session is opened to find the sum of primes between 0 and 100.  The first expression entered in the evalator evalator generates the initial integer list.  The next expression uses the ```filter``` and ```is-prime?``` functions defined in the file to filter the candidate list.  You'll notice that I entered a special character ```Ⓔ```.  In normal operation, this refers to the value of each line item.  For this example, I'd like to have ```Ⓔ``` refer to the value of the entire list.  To do this, I first select the entire list using the helm mark-all shortcut, ```M-a```.  I then enter shortcut the bound to ```(evalator-action-confirm-collect)```, ```C-c C-c```.  This will cause the input expression to be applied over the entire selection rather than the each item individually.
+
 
 Suppose you wanted to generate several configuration files in your current directory.  The files should be named "setup-windows.el", "setup-keys.el", and "setup-packages.el".  Each file should look like the following:
 ```
