@@ -21,7 +21,8 @@ Here's what happened:
 * Call ```M-x evalator``` to start an Evalator session
 * Paste the package names into a quoted lisp list ```'()```
 * Build a string for the shell command I want executed for each package
-* Call the Emacs command ```shell-command``` for each of the strings from before
+* Call the Emacs command ```shell-command``` with each of the strings from before
+* Exit Evalator and verify files are created with the right contents
 
 See the following examples for a more detailed explanation of how to use Evalator. 
 
