@@ -12,11 +12,18 @@ Evalator is an Emacs extension built on top of Helm that allows for interactive 
 I think it's best to start with an example to show what Evalator can do.
 
 ### A Practical Example ###
-Suppose you have several Emacs packages and want to generate an elisp configuration file for each one in your current directory.  Each file should be named ```setup-$PACKAGE.el``` and each file should contain the line ```(provide 'setup-$PACKAGE)```. ```$PACKAGE``` refers to the package name.
+Suppose you have several Emacs packages and want to generate an elisp configuration file for each one in your current directory.  Each file should be named ```setup-$PACKAGE.el``` and each file should contain the line ```(provide 'setup-$PACKAGE)```. ```$PACKAGE``` refers to the package name.  Watch the example below to see how I can do this easily with Evalator.
 
 ![a-practical-example](example-gifs/practical.gif)
 
-You may be wondering how I did that.  In the following examples I'll walkthrough the basic usage of Evalator.
+Here's what happened:
+* Copy all package names
+* Call ```M-x evalator``` to start an Evalator session
+* Paste the package names into a quoted lisp list ```'()```
+* Build a string for the shell command I want executed for each package
+* Call the Emacs command ```shell-command``` for each of the strings from before
+
+See the following examples for a more detailed explanation of how to use Evalator. 
 
 ### Special Args ###
 ![special-args-example](example-gifs/special-args.gif)
