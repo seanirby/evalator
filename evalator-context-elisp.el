@@ -79,7 +79,7 @@ before it."
 (defun evalator-context-elisp-subst-identity-special-args (expr-str c)
   ""
   (let ((sa (evalator-context-elisp-get-special-arg)))
-    (replace-regexp-in-string sa (prin1-to-string c) expr-str t)))
+    (replace-regexp-in-string sa (prin1-to-string c) expr-str t t)))
 
 (defun evalator-context-elisp-subst-special-args (expr-str c)
   ""
