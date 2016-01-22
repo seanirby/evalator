@@ -58,23 +58,54 @@
   "Return special arg from elisp context."
   (evalator-context-get-special-arg evalator-context-elisp))
 
+;; This function is gross because I can't use a regex matching function
+;; I'd like to, but this function is called from within a regex match handler,
+;; Calling one from within another produces unexpected behavior.
+(defun evalator-context-elisp-numbered-arg-num (str)
+  ""
+  (let* ((first-char-str (cl-subseq str 0 1))
+         (not-num-p (and (equal 0 (string-to-number first-char-str))
+                         (not (equal "0" first-char-str)))))
+    (if not-num-p
+        (evalator-context-elisp-numbered-arg-num (cl-subseq str 1))
+      (string-to-number str))))
+
+(defun evalator-context-elisp-numbered-arg-pattern (&optional quote-p)
+  ""
+  (let ((frmt (if quote-p "'?%s[0-9]+" "%s[0-9]+")))
+    (format frmt (evalator-context-elisp-get-special-arg))))
+
 (defun evalator-context-elisp-make-equiv-expr (exprs)
   "Create an equivalent expression string from EXPRS.
 
 Accepts a list of expressions, EXPRS, and return the equivalent
 expression by substituting any special args with the expression
 before it."
-  (let* ((pattern (format "'?%s" (evalator-context-elisp-get-special-arg)))
-         (sub (lambda (e1 e2)
-                (replace-regexp-in-string pattern e1 e2 t))))
+  (let* ((pattern-numbered (evalator-context-elisp-numbered-arg-pattern t))
+         (pattern-identity (format "'?%s" (evalator-context-elisp-get-special-arg)))
+         (match-f (lambda (str m)
+                    (concat "(elt "
+                            str
+                            " "
+                            (number-to-string (evalator-context-elisp-numbered-arg-num m))
+                            ")")))
+         (sub (lambda (expr-acc expr)
+                (let* ((match-f (apply-partially match-f expr-acc))
+                       
+                       (num-args-replaced
+                        (replace-regexp-in-string pattern-numbered match-f expr t))
+
+                       (num-and-identity-args-replaced
+                        (replace-regexp-in-string pattern-identity expr-acc num-args-replaced t t)))
+                  num-and-identity-args-replaced))))
     (cl-reduce sub exprs)))
 
 (defun evalator-context-elisp-subst-numbered-special-args (expr-str c)
   ""
-  (let ((pattern (format "%s[0-9]+" (evalator-context-elisp-get-special-arg))))
-    (cl-flet ((match-f (m)
-                       (prin1-to-string (elt c (string-to-number (cl-subseq m 1))))))
-      (replace-regexp-in-string pattern #'match-f expr-str t))))
+  (let ((pattern (evalator-context-elisp-numbered-arg-pattern))
+        (match-f (lambda (m)
+                   (prin1-to-string (elt c (string-to-number (cl-subseq m 1)))))))
+    (replace-regexp-in-string pattern match-f expr-str t t)))
 
 (defun evalator-context-elisp-subst-identity-special-args (expr-str c)
   ""
