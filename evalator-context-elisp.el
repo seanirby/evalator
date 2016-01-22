@@ -114,9 +114,10 @@ before it."
 
 (defun evalator-context-elisp-subst-special-args (expr-str c)
   ""
-  ;;TODO this is ugly
-  (evalator-context-elisp-subst-identity-special-args
-   (evalator-context-elisp-subst-numbered-special-args expr-str c) c))
+  (let* ((num-args-replaced (evalator-context-elisp-subst-numbered-special-args expr-str c))
+         (num-and-identity-args-replaced
+          (evalator-context-elisp-subst-identity-special-args num-args-replaced c)))
+    num-and-identity-args-replaced))
 
 (defun evalator-context-elisp-make-candidates (input mode initial-p)
   "Convert INPUT into a valid list of helm candidates.
