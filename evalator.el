@@ -210,14 +210,16 @@ is returned."
     :nomark t
     :nohighlight t))
 
-(defun evalator-insert-equiv-expr (&optional exprs)
+(defun evalator-insert-equiv-expr ()
   "Insert the equivalent expression of the previous evalator session.
 If EXPRS is nil then the expression list will be retrieved from the
 evalator-history will be used instead."
   (interactive)
-  (insert (funcall
-           (slot-value (plist-get evalator-state :context) :make-equiv-expr)
-           (or (evalator-history-expression-chain) exprs))))
+  (if (equal :explicit (plist-get evalator-state :mode))
+      (insert (funcall
+               (slot-value (plist-get evalator-state :context) :make-equiv-expr)
+               (evalator-history-expression-chain)))
+    (message "Error: This command is only allowed when the last evalator session was started with `evalator-explicit'.")))
 
 (defun evalator-resume ()
   "Resumes last evalator session."

@@ -149,11 +149,18 @@
 (ert-deftest evalator-candidate-transformer ())
 
 (ert-deftest evalator-insert-equiv-expr-test ()
-  (let ((expr-chain '("(list 1 2 3)" "(reduce '+ Ⓔ)" "(+ Ⓔ 1)")))
-    (with-temp-buffer
-      (evalator-insert-equiv-expr expr-chain)
-      (should (equal "(+ (reduce '+ (list 1 2 3)) 1)"
-                     (buffer-string))))))
+  (with-mock
+   (stub slot-value => (lambda (exprs) (car exprs)))
+   (stub evalator-history-expression-chain => '("(+ 1 1)"))
+   (stub message => "Error message output")
+   (let ((evalator-state  (list :mode :explicit)))
+     (with-temp-buffer
+       (evalator-insert-equiv-expr)
+       (should (equal "(+ 1 1)"
+                      (buffer-string)))))
+   (let ((evalator-state  (list :mode nil)))
+     (should (equal "Error message output"
+                    (evalator-insert-equiv-expr))))))
 
 (ert-deftest evalator-test ()
   (let ((state-init-p nil)
