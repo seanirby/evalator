@@ -239,7 +239,8 @@ evalator-history will be used instead."
     
     (helm :sources (list history-source result-source)
           :buffer "*helm-evalator*"
-          :prompt "Enter Expression: ")))
+          :prompt "Enter Expression: "
+          :helm-after-update-hook helm-after-update-hook)))
 
 (defun evalator-explicit ()
   "Start an evalator-session in explicit mode."
