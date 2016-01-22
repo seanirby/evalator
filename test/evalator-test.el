@@ -72,6 +72,14 @@
      (should (equal nil
                     (evalator-action-confirm))))))
 
+(ert-deftest evalator-action-confirm-collect-test ()
+  (let ((helm-pattern "pattern"))
+    (with-mock
+     (stub slot-value => "f")
+     (stub evalator-get-candidates => '("cand-1"))
+     (mock (evalator-action-confirm '("f" (("cand-1") "pattern" :normal t))))
+     (evalator-action-confirm-collect))))
+
 (ert-deftest evalator-action-insert-special-arg-test ()
   (let ((evalator-context-special-arg-default "Ⓔ"))
     (should (equal "Ⓔ"
@@ -79,14 +87,19 @@
                      (evalator-action-insert-special-arg)
                      (buffer-string))))))
 
-;; TODO
-(ert-deftest evalator-flash-test ())
+(ert-deftest evalator-flash-test ()
+  (with-mock
+   (mock (face-remap-add-relative * 'evalator-success) => t)
+   (evalator-flash :success))
+  (with-mock
+   (mock (face-remap-add-relative * 'evalator-error) => t)
+   (evalator-flash :error)))
 
 ;; TODO
-(ert-deftest evalator-unmark-all ())
+(ert-deftest evalator-unmark-all-test ())
 
 ;; TODO
-(ert-deftest evalator-marked-candidates ())
+(ert-deftest evalator-marked-candidates-test ())
 
 (ert-deftest evalator-persistent-help-test ()
   (let ((evalator-key-map (list 'evalator-action-previous           "C-l"
@@ -99,16 +112,6 @@
                                    "RET: Accept transformation, "
                                    "C-;: Insert special arg")
                            (evalator-persistent-help))))))
-
-;; Tried to mock the helm-build-sync-source macro but ran into issues
-;; This works for now...
-(ert-deftest evalator-build-source-test ()
-  (let ((args-normal (evalator-build-source nil :normal))
-        (args-explicit (evalator-build-source nil :explicit)))
-    (should (equal "Evaluation Result"
-                   (cdr (assoc 'name args-normal))))
-    (should (equal "Evaluation Result(Explicit)"
-                   (cdr (assoc 'name args-explicit))))))
 
 (ert-deftest evalator-get-candidates-test ()
   (with-mock
@@ -145,8 +148,35 @@
      (mock (evalator-flash *) :times 2)
      (evalator-try-context-candidate-f context-f nil err-handler))))
 
-;; TODO
-(ert-deftest evalator-candidate-transformer ())
+(ert-deftest evalator-candidate-transformer ()
+  (let ((helm-pattern "pattern"))
+    (with-mock
+     (mock (evalator-try-context-candidate-f "f" "args" "err-handler") => t)
+     (evalator-candidate-transformer '("f" "args") "err-handler"))
+    (with-mock
+     (stub evalator-history-index => 0)
+     (mock (evalator-try-context-candidate-f * '("pattern" :normal t) *))
+     (evalator-candidate-transformer))
+    (with-mock
+     (stub evalator-history-index => 1)
+     (stub evalator-get-candidates => '("cand-1"))
+     (mock (evalator-try-context-candidate-f * '(("cand-1") "pattern" :normal) *))
+     (evalator-candidate-transformer))))
+
+;; Tried to mock the helm-build-sync-source macro but ran into issues
+;; This works for now...
+(ert-deftest evalator-build-source-test ()
+  (let ((args-normal (evalator-build-source nil :normal))
+        (args-explicit (evalator-build-source nil :explicit)))
+    (should (equal "Evaluation Result"
+                   (cdr (assoc 'name args-normal))))
+    (should (equal "Evaluation Result(Explicit)"
+                   (cdr (assoc 'name args-explicit))))))
+
+(ert-deftest evalator-build-history-source-test ()
+  (with-mock
+   (stub helm-build-dummy-source => t)
+   (evalator-build-history-source)))
 
 (ert-deftest evalator-insert-equiv-expr-test ()
   (with-mock
@@ -161,6 +191,11 @@
    (let ((evalator-state  (list :mode nil)))
      (should (equal "Error message output"
                     (evalator-insert-equiv-expr))))))
+
+(ert-deftest evalator-resume-test ()
+  (with-mock
+   (mock (helm-resume "*helm-evalator*"))
+   (evalator-resume)))
 
 (ert-deftest evalator-test ()
   (let ((state-init-p nil)
@@ -184,6 +219,11 @@
             (should (equal (list :candidates '("foo")
                                  :expression "")
                            history)))))
+
+(ert-deftest evalator-explicit-test ()
+  (with-mock
+   (mock (evalator :explicit) => t)
+   (evalator-explicit)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; evalator-test.el ends here
