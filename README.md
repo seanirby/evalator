@@ -24,16 +24,10 @@ Here's what happened:
 * Call the Emacs command ```shell-command``` with each of the strings from before
 * Exit Evalator and verify files are created with the right contents
 
-See the following examples for a more detailed explanation of how to use Evalator. 
+See the following example for an informative walkthrough
 
-### Special Args ###
-![special-args-example](example-gifs/special-args.gif)
-
-Upon starting any evalator session you must first provide an expression to generate the initial data.  In this example, the expression ```(list 0 1 2 3)``` is used to generate the integers 0 through 3.  Notice that the prompt is red until a valid expression is entered.  I then press ```RETURN``` which is bound to the command ```evalator-action-confirm```.  This will evaluate my expression, store the result, and prompt me to enter a new expression.  Now I enter an expression to add 1 to every integer.  You'll notice that I entered a special character ```Ⓔ```.  In normal operation, evalator evaluates the expression on each item and ```Ⓔ``` refers to the value of that item.  The special arg is customizable for each evaluation context(more on those later) and it can be quickly entered using the the shortcut, ```C-;```, which is bound to the command ```evalator-action-insert-special-arg```.  I confirm this transformation and enter a new expression ```(cons Ⓔ (list Ⓔ))```.  This adds the number to a list containing itself.  After confirming this transformation,  I select the first and third items, then enter the expression ```(car 'Ⓔ)``` which takes the first element from the list.  Note the quotation before the special arg.  The special arg refers to the item value, and since ```(car (1 1))``` is an invalid expression, the quote must be added to prevent ```(1 1)``` from being evaluated.  After I confirm the transformation, you'll see that only the items I've marked appear in the next step.  Finally,  I select all candidates using ```M-a```(helm-mark-all) and then insert them into the buffer above using ```C-c TAB```(helm-copy-to-buffer).
-    
-* ADD MORE EXAMPLES *
-
-As you can see, Evalator is quite powerful.  It is similar to using a REPL, but instead of executing only a single expression at a time, Evalator lets you incrementally build a result based off of as many commands as you'd like.
+### Walkthrough ###
+![walkthrough](example-gifs/walkthrough.gif)
 
 ## Installation ##
 
@@ -43,8 +37,10 @@ As you can see, Evalator is quite powerful.  It is similar to using a REPL, but 
 
 ```
 (require 'evalator)
-;; Suggested keybinding
+;; Suggested keybindings
 (global-set-key (kbd "C-c e v") 'evalator)
+(global-set-key (kbd "C-c e e") 'evalator-explicit)
+(global-set-key (kbd "C-c e i") 'evalator-insert-equiv-expr)
 ```
 
 ## Basic Usage ##
