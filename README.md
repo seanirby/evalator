@@ -30,17 +30,44 @@ See the following examples for a more detailed explanation of how to use Evalato
 ![special-args-example](example-gifs/special-args.gif)
 
 Upon starting any evalator session you must first provide an expression to generate the initial data.  In this example, the expression ```(list 0 1 2 3)``` is used to generate the integers 0 through 3.  Notice that the prompt is red until a valid expression is entered.  I then press ```RETURN``` which is bound to the command ```evalator-action-confirm```.  This will evaluate my expression, store the result, and prompt me to enter a new expression.  Now I enter an expression to add 1 to every integer.  You'll notice that I entered a special character ```Ⓔ```.  In normal operation, evalator evaluates the expression on each item and ```Ⓔ``` refers to the value of that item.  The special arg is customizable for each evaluation context(more on those later) and it can be quickly entered using the the shortcut, ```C-;```, which is bound to the command ```evalator-action-insert-special-arg```.  I confirm this transformation and enter a new expression ```(cons Ⓔ (list Ⓔ))```.  This adds the number to a list containing itself.  After confirming this transformation,  I select the first and third items, then enter the expression ```(car 'Ⓔ)``` which takes the first element from the list.  Note the quotation before the special arg.  The special arg refers to the item value, and since ```(car (1 1))``` is an invalid expression, the quote must be added to prevent ```(1 1)``` from being evaluated.  After I confirm the transformation, you'll see that only the items I've marked appear in the next step.  Finally,  I select all candidates using ```M-a```(helm-mark-all) and then insert them into the buffer above using ```C-c TAB```(helm-copy-to-buffer).
-
-### Sum of Primes ###
-![prime-example](example-gifs/primes.gif)
-
-In the example above an evalator session is opened to find the sum of primes between 0 and 100.  The first expression entered generates the initial integer list.  The next expression uses the ```filter``` and ```is-prime?``` functions defined in the file to filter the prime numbers in the candidate list.  For this example, I'd like to have ```Ⓔ``` refer to the value of the entire list.  To do this, I first select the entire list using the helm mark-all shortcut, ```M-a```.  I then enter the shortcut bound to ```evalator-action-confirm-collect```, ```C-c C-c```.  This will cause the input expression to be applied over the entire selection rather than each item individually.  Now that I have the list of primes between 0 and 100, I use the same process as before and reduce the entire list with a sum function to get the final result.  Finally, I exit the evalator session and insert the equivalent expression of the session using ```evalator-insert-equiv-expr```.
+    
+* ADD MORE EXAMPLES *
 
 As you can see, Evalator is quite powerful.  It is similar to using a REPL, but instead of executing only a single expression at a time, Evalator lets you incrementally build a result based off of as many commands as you'd like.
 
 ## Installation ##
+
+*UPDATE WHEN ADDED TO MELPA*
+
 ## Setup ##
+
+```
+(require 'evalator)
+;; Suggested keybinding
+(global-set-key (kbd "C-c e v") 'evalator)
+```
+
 ## Basic Usage ##
+### Public API ###
+
+Command                                          | Description
+-------------------------------------------------|---------------------------
+```evalator```                                   | Starts an evalator session 
+```evalator-explicit```                          | Starts an evalator session in explicit mode
+```evalator-resume```                            | Resumes last evalator session
+```evalator-insert-equiv-expr```                 | Inserts the equivalent expression of the last evalator session into the current buffer. NOTE: The last session must have been run in explicit mode for this to work.
+
+### Key Actions ###
+Below is a table of evalator specific key actions that can be used in an evalator session.  For helm specific commands such as candidate navigation and marking, refer to [helm's](https://github.com/emacs-helm/helm) documentation or run ```C-h m``` from within an evalator session.
+
+Action shortcut      | Description
+---------------------|-------------------------------
+<kbd>RET</kbd>       | Accepts initial candidates or transformation then updates history.  If transforming candidates, the expression is evaluated on each candidate with the special arg referring to the candidate's value
+<kbd>C-c C-c</kbd>   | Accepts transformation and updates history. Expression is evaluated once with the special arg referring to the selected candidates list
+<kbd>C-c C-e</kbd>   | Executes the expression in Elisp on each selected candidate.  The history is not updated and the candidates are not transformed
+<kbd>C-;</kbd>       | Inserts the current evaluation context's special arg
+<kbd>C-j</kbd>       | Goes to next history state
+<kbd>C-l</kbd>       | Goes to previous history state
 ### Special Arguments ###
 ### History ###
 ### Normal Mode ###
