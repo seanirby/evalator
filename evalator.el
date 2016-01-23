@@ -1,4 +1,4 @@
-;;; evalator.el --- Emacs package for interactive transformation of data
+;;; evalator.el --- Package for interactive transformation of data
 ;; 
 ;; Copyright © , Sean Irby
 ;; Author: Sean Irby
