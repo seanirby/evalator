@@ -6,6 +6,7 @@
 ;; URL: http://www.github.com/seanirby/evalator
 ;; Version: 0.0.1
 ;; Keywords: languages, elisp, helm
+;; Package-Requires: ((helm-core "1.9.1"))
 ;; 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
