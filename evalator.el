@@ -28,7 +28,6 @@
 ;; 
 ;;; Code:
 
-
 (require 'cl-lib)
 (require 'evalator-context)
 (require 'evalator-context-elisp)
@@ -39,23 +38,23 @@
 (require 'evalator-utils)
 (require 'helm)
 
-
-(defvar evalator-candidates-initial '("Enter an expression below to generate initial data"))
-(defvar evalator-error nil)
+(defvar evalator-candidates-initial '("Enter an expression below to generate initial data")
+  "Informational candidate used on evalator startup.")
+(defvar evalator-error nil
+  "Error symbol used for signaling evalator errors.")
 (put 'evalator-error 'error-conditions '(error))
 
 (defvar evalator-prompt-f
   (lambda ()
     (format "%s of %s" (+ 1 (evalator-history-index)) (length (evalator-history))))
-  "Points to a function that is called with the current history index
-and length.  Will be used to generate the evalator prompt") 
+  "Var's value is a function used to generate the evalator prompt.")
 
 (defun evalator-action-previous ()
   "Go to the next history state and update the evalator session."
   (interactive)
   (when (not (equal 0 (evalator-history-index)))
     (evalator-utils-put! evalator-state :history-index (+ -1 (evalator-history-index)))
-    (evalator-unmark-all)
+    (helm-unmark-all)
     (helm-set-pattern "")
     (helm-update)))
 
@@ -64,12 +63,15 @@ and length.  Will be used to generate the evalator prompt")
   (interactive)
   (when (not (equal (+ -1 (length (evalator-history))) (evalator-history-index)))
     (evalator-utils-put! evalator-state :history-index (+ 1 (evalator-history-index)))
-    (evalator-unmark-all)
+    (helm-unmark-all)
     (helm-set-pattern "")
     (helm-update)))
 
 (defun evalator-action-execute-in-elisp ()
-  ""
+  "Execute expression in elisp context.
+This function is useful if you want to execute an Emacs command or
+Elisp function from within an evalator session that uses a different
+evaluation context.  This action does not transform the candidates."
   (interactive)
   (let* ((spec-arg-elisp (evalator-context-get-special-arg evalator-context-elisp))
          (spec-arg-curr  (evalator-context-get-special-arg (plist-get evalator-state :context)))
@@ -83,30 +85,37 @@ and length.  Will be used to generate the evalator prompt")
       (error
        (message err)))))
 
-(defun evalator-action-confirm (&optional f-and-args)
-  "Transform current candidates.
-If successful, pushes the result onto the evalator history."
+(defun evalator-action-confirm-make-or-transform (&optional f-and-args)
+  "Make initial candidates or transform candidates then update history.
+Accepts an optional arg F-AND-ARGS to pass to `evalator-make-or-transform'."
   (interactive)
   (let* ((err-handler (lambda (err-str)
                         (message (concat "Error: " err-str))
                         nil))
-         (cands (evalator-candidate-transformer f-and-args err-handler)))
+         (cands (evalator-candidate-make-or-transform f-and-args err-handler)))
     (when cands
       (evalator-history-push! cands helm-pattern)
-      (evalator-unmark-all)
+      (helm-unmark-all)
       (helm-set-pattern ""))))
 
-(defun evalator-action-confirm-collect ()
-  ""
+(defun evalator-action-confirm-transform-collect ()
+  "Transform the entire candidate selection then update history.
+Normally candidates are transformed by evaluating the current
+expression on each candidate with the special arg referring to the
+value of the candidate.  This action changes that behavior in two
+ways.  First, it changes the meaning of the special arg so it refers
+to the entire candidate selection.  Second, the current expression is
+evaluated only once to produce a single candidate.  This action is
+used for when you need to produce an aggregate result."
   (interactive)
   (let* ((f (slot-value (plist-get evalator-state :context) :transform-candidates))
          (expr-str helm-pattern)
          (mode (plist-get evalator-state :mode))
          (args (list (evalator-get-candidates) expr-str mode t)))
-    (evalator-action-confirm (list f args))))
+    (evalator-action-confirm-make-or-transform (list f args))))
 
 (defun evalator-action-insert-special-arg ()
-  "Insert the special evalator arg into the expression prompt."
+  "Insert the evalator special arg into the expression prompt."
   (interactive)
   (insert (evalator-context-get-special-arg (plist-get evalator-state :context))))
 
@@ -115,16 +124,6 @@ If successful, pushes the result onto the evalator history."
   (let ((f (if (equal :success status) 'evalator-success 'evalator-error)))
     (with-current-buffer (window-buffer (active-minibuffer-window))
       (face-remap-add-relative 'minibuffer-prompt f))))
-
-(defun evalator-unmark-all ()
-  "Same as 'helm-unmark-all' except no message."
-  (interactive)
-  (with-helm-window
-    (save-excursion
-      (helm-clear-visible-mark))
-    (setq helm-marked-candidates nil)
-    (helm-mark-current-line)
-    (helm-display-mode-line (helm-get-current-source))))
 
 (cl-defun evalator-marked-candidates (&key with-wildcard)
   "Same as 'helm-marked-candidates' except it returns nil if no candidates were marked."
@@ -148,22 +147,19 @@ If successful, pushes the result onto the evalator history."
             (f 'evalator-action-insert-special-arg) ": Insert special arg")))
 
 (defun evalator-get-candidates ()
-  ""
+  "Return current evalator candidates.
+If there are marked candidates, return the list of those.  Otherwise,
+return a list of all the candidates."
   (let ((cands-all (evalator-history-current :candidates))
         (cands-marked (evalator-marked-candidates)))
     (or cands-marked cands-all)))
 
-(defun evalator-try-context-candidate-f (context-f args err-handler)
-  "Call the context's `:make-candidates' or `:transform-candidates' function.
-Attempt to make or transform the current evalator candidates according
-to the input expression EXPR and mode MODE.  Arguments MAKE-F and
-TRANSFORM-F are references to the current evaluation context's
-`:make-candidates' function and `:transform-candidates' function,
-respectively.  If the history index is 0 MAKE-F is called.  Otherwise,
-TRANSFORM-F is called.  If optional arg, ERR-HANDLER, is nil and the
-operation fails the current evalator candidates are returned.
-Otherwise, ERR-HANDLER is called with the error string and that result
-is returned."
+(defun evalator-try-context-f (context-f args &optional err-handler)
+  "Try executing the given evaluation context function CONTEXT-F.
+Calls TRANSFORM-F with the given ARGS.  Returns the result if the
+operation was successful.  If there was an error and the optional arg
+ERR-HANDLER is nil, then return all current evalator candidates.  If
+ERR-HANDLER is non-nil, then it is executed and its value is returned."
   (condition-case err
       (progn
         (if (equal "" helm-pattern)
@@ -176,11 +172,17 @@ is returned."
          (funcall err-handler (prin1-to-string err))
        (evalator-history-current :candidates)))))
 
-(defun evalator-candidate-transformer (&optional f-and-args err-handler)
-  "Can specify your own F-AND-ARGS list."
+(defun evalator-candidate-make-or-transform (&optional f-and-args err-handler)
+  "Make initial candidates or transform current candidates.
+If current history index is 0 then the context's `:make-candidates'
+slot function and appropriate args are passed to
+`evalator-try-context-f' for evaluation.  Otherwise the context's
+`:transform-candidates' slot function is used.  If optional arg
+F-AND-ARGS is non-nil then it will be used instead.  Function also
+accept's an optional ERR-HANDLER to pass to `evalator-try-context-f'."
   (with-helm-current-buffer
     (if f-and-args
-        (apply 'evalator-try-context-candidate-f (append f-and-args (list err-handler)))
+        (apply 'evalator-try-context-f (append f-and-args (list err-handler)))
       (let* ((make-f      (slot-value (plist-get evalator-state :context) :make-candidates))
              (transform-f (slot-value (plist-get evalator-state :context) :transform-candidates))
              (expr-str    helm-pattern)
@@ -188,13 +190,13 @@ is returned."
              (f-and-args  (if (equal 0 (evalator-history-index))
                               (list make-f (list expr-str mode t) err-handler)
                             (list transform-f (list (evalator-get-candidates) expr-str mode) err-handler))))
-        (apply 'evalator-try-context-candidate-f f-and-args)))))
+        (apply 'evalator-try-context-f f-and-args)))))
 
 (defun evalator-build-source (candidates mode)
   "Build the source for a evalator session using a CANDIDATES list and a MODE."
   (helm-build-sync-source (concat "Evaluation Result" (when (equal :explicit mode) "(Explicit)"))
     :candidates candidates
-    :filtered-candidate-transformer (lambda (_c _s) (evalator-candidate-transformer))
+    :filtered-candidate-transformer (lambda (_c _s) (evalator-candidate-make-or-transform))
     :keymap evalator-key-map
     :nohighlight t
     :nomark (equal :explicit mode)
@@ -211,9 +213,7 @@ is returned."
     :nohighlight t))
 
 (defun evalator-insert-equiv-expr ()
-  "Insert the equivalent expression of the previous evalator session.
-If EXPRS is nil then the expression list will be retrieved from the
-evalator-history will be used instead."
+  "Insert the equivalent expression of the previous evalator session into the current buffer."
   (interactive)
   (if (equal :explicit (plist-get evalator-state :mode))
       (insert (funcall
@@ -222,7 +222,7 @@ evalator-history will be used instead."
     (message "Error: This command is only allowed when the last evalator session was started with `evalator-explicit'.")))
 
 (defun evalator-resume ()
-  "Resumes last evalator session."
+  "Resume last evalator session."
   (interactive)
   (helm-resume "*helm-evalator*"))
 
@@ -245,7 +245,10 @@ evalator-history will be used instead."
           :helm-after-update-hook helm-after-update-hook)))
 
 (defun evalator-explicit ()
-  "Start an evalator-session in explicit mode."
+  "Start an evalator-session in explicit mode.
+In explicit mode the data generated will always appear as a single
+candidate.  This is the only mode that allows an equivalanet
+expression to be generated."
   (interactive)
   (evalator :explicit))
 

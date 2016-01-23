@@ -41,7 +41,7 @@
   (let ((evalator-state (list :history [(:candidates '())
                                         (:candidates '())]
                               :history-index 0)))
-    (noflet ((evalator-unmark-all () nil)
+    (noflet ((helm-unmark-all () nil)
              (helm-set-pattern (_) nil)
              (helm-update () nil))
             
@@ -57,28 +57,40 @@
             (evalator-action-previous)
             (should (equal 0   (evalator-history-index))))))
 
-(ert-deftest evalator-action-confirm-test ()
-  (let ((helm-pattern "foo"))
-    ;;Successful transformation
+(ert-deftest evalator-action-execute-in-elisp ()
+  (let ((helm-pattern "pattern"))
     (with-mock
-     (mock (evalator-candidate-transformer * *) => t)
-     (mock (evalator-history-push! * *) :times 1)
-     (mock (evalator-unmark-all) :times 1)
-     (mock (helm-set-pattern "") :times 1 => t)
-     (evalator-action-confirm))
-    ;;Unsuccessful transformation
+     (stub evalator-get-candidates => '("cand-1"))
+     (mock (evalator-context-elisp-transform-candidates '("cand-1") "pattern" nil) => '("cand-1-xfrmd"))
+     (mock (message "(\"cand-1-xfrmd\")") => t)
+     (evalator-action-execute-in-elisp))
     (with-mock
-     (mock (evalator-candidate-transformer * *) => nil)
-     (should (equal nil
-                    (evalator-action-confirm))))))
+     (stub evalator-context-elisp-transform-candidates => (signal 'evalator-error '("error")))
+     (stub message => nil)
+     (stub error => t)
+     (evalator-action-execute-in-elisp))))
 
-(ert-deftest evalator-action-confirm-collect-test ()
+(ert-deftest evalator-action-confirm-make-or-transform-test ()
+  ;;Successful transformation
+  (with-mock
+   (mock (evalator-candidate-make-or-transform * *) => t)
+   (mock (evalator-history-push! * *) :times 1)
+   (mock (helm-unmark-all) :times 1)
+   (mock (helm-set-pattern "") :times 1 => t)
+   (evalator-action-confirm-make-or-transform))
+  ;;Unsuccessful transformation
+  (with-mock
+   (mock (evalator-candidate-make-or-transform * *) => nil)
+   (should (equal nil
+                  (evalator-action-confirm-make-or-transform)))))
+
+(ert-deftest evalator-action-confirm-transform-collect-test ()
   (let ((helm-pattern "pattern"))
     (with-mock
      (stub slot-value => "f")
      (stub evalator-get-candidates => '("cand-1"))
-     (mock (evalator-action-confirm '("f" (("cand-1") "pattern" :normal t))))
-     (evalator-action-confirm-collect))))
+     (mock (evalator-action-confirm-make-or-transform '("f" (("cand-1") "pattern" :normal t))))
+     (evalator-action-confirm-transform-collect))))
 
 (ert-deftest evalator-action-insert-special-arg-test ()
   (let ((evalator-context-special-arg-default "Ⓔ"))
@@ -125,20 +137,20 @@
    (should (equal '("cand-2")
                   (evalator-get-candidates)))))
 
-(ert-deftest evalator-try-context-candidate-f-test ()
+(ert-deftest evalator-try-context-f-test ()
   ;; successful call
   (let ((helm-pattern "(non-empty expression)")
         (context-f   (lambda (&rest args) t)))
     (with-mock
      (mock (evalator-flash :success) :times 1)
-     (evalator-try-context-candidate-f context-f nil nil)))
+     (evalator-try-context-f context-f nil nil)))
   ;; trigger error because of empty pattern
   (let ((helm-pattern "")
         (context-f    (lambda (&rest args) t)))
     (with-mock
      (mock (evalator-flash :error) :times 1)
      (mock (evalator-history-current :candidates) :times 1 => t)
-     (evalator-try-context-candidate-f context-f nil nil)))
+     (evalator-try-context-f context-f nil nil)))
   ;; error handler gets called
   (let ((helm-pattern "(non-empty expression)")
         (context-f    (lambda (&rest args) (signal 'evalator-error '(""))))
@@ -146,22 +158,22 @@
     (with-mock
      ;; Flashes :success then :error
      (mock (evalator-flash *) :times 2)
-     (evalator-try-context-candidate-f context-f nil err-handler))))
+     (evalator-try-context-f context-f nil err-handler))))
 
-(ert-deftest evalator-candidate-transformer ()
+(ert-deftest evalator-make-or-transform-test ()
   (let ((helm-pattern "pattern"))
     (with-mock
-     (mock (evalator-try-context-candidate-f "f" "args" "err-handler") => t)
-     (evalator-candidate-transformer '("f" "args") "err-handler"))
+     (mock (evalator-try-context-f "f" "args" "err-handler") => t)
+     (evalator-candidate-make-or-transform '("f" "args") "err-handler"))
     (with-mock
      (stub evalator-history-index => 0)
-     (mock (evalator-try-context-candidate-f * '("pattern" :normal t) *))
-     (evalator-candidate-transformer))
+     (mock (evalator-try-context-f * '("pattern" :normal t) *))
+     (evalator-candidate-make-or-transform))
     (with-mock
      (stub evalator-history-index => 1)
      (stub evalator-get-candidates => '("cand-1"))
-     (mock (evalator-try-context-candidate-f * '(("cand-1") "pattern" :normal) *))
-     (evalator-candidate-transformer))))
+     (mock (evalator-try-context-f * '(("cand-1") "pattern" :normal) *))
+     (evalator-candidate-make-or-transform))))
 
 ;; Tried to mock the helm-build-sync-source macro but ran into issues
 ;; This works for now...
