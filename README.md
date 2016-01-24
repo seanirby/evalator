@@ -19,17 +19,24 @@ Don't see a context package for your favorite language?  Write one!  See [evalat
 Here's a practical example to demonstrate what evalator's capable of:
 
 ### A Practical Example ###
-Suppose you have several Emacs packages and want to generate an elisp configuration file for each one in your current directory.  Each file should be named ```setup-$PACKAGE.el``` and each file should contain the line ```(provide 'setup-$PACKAGE)```. ```$PACKAGE``` refers to the package name.  Watch the example below to see how easy this is with evalator.
+Suppose you have several Emacs packages and want to generate an elisp configuration file for each one in your current directory.  Each file should be named ```setup-$PACKAGE.el``` with ```$PACKAGE``` equaling the package name.  Each file should contain the following line.
+
+```
+(provide 'setup-$PACKAGE)
+```
+
+Watch the example below to see how easy this is with evalator.
 
 ![a-practical-example](example-gifs/practical.gif)
 
 Here's what happened:
+
 * Copy all package names
 * Call ```M-x evalator``` to start an evalator session
-* Paste the package names into a quoted lisp list ```'()```
+* Paste the package names into a lisp list ```'()```
 * Build a string for the shell command I want executed for each package
 * Call the Emacs command ```shell-command``` with each of the strings from before
-* Exit evalator and verify files are created with the right contents
+* Exit evalator and verify the files are created with the right contents
 
 See the [Basic Usage](#basic-usage) section for a detailed walkthrough.
 
