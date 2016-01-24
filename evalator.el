@@ -1,4 +1,4 @@
-;;; evalator.el --- Package for interactive transformation of data
+;;; evalator.el --- Package for interactive transformation of data with helm
 ;; 
 ;; Copyright © , Sean Irby
 ;; Author: Sean Irby
