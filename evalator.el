@@ -255,7 +255,5 @@ expression to be generated."
 
 (provide 'evalator)
 
-;;; evalator.el ends here
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; evalator.el ends here
