@@ -62,24 +62,24 @@ Add the following to your init file
 
 ### Public API ###
 
-Command                                          | Description
--------------------------------------------------|---------------------------
-```evalator```                                   | Starts an evalator session 
-```evalator-explicit```                          | Starts an evalator session in explicit mode
-```evalator-resume```                            | Resumes last evalator session
-```evalator-insert-equiv-expr```                 | Inserts the equivalent expression of the last evalator session into the current buffer. NOTE: The last session must have been run in explicit mode for this to work.
+Command                                                                                    | Description
+-------------------------------------------------------------------------------------------|---------------------------
+<span style="white-space: nowrap;">```evalator```</span>                                   | Starts an evalator session 
+<span style="white-space: nowrap;">```evalator-explicit```</span>                          | Starts an evalator session in explicit mode
+<span style="white-space: nowrap;">```evalator-resume```</span>                            | Resumes last evalator session
+<span style="white-space: nowrap;">```evalator-insert-equiv-expr```</span>                 | Inserts the equivalent expression of the last evalator session into the current buffer. NOTE: The last session must have been run in explicit mode for this to work.
 
 ### Key Actions ###
 Below is a table of evalator specific key actions that can be used within the evalator session.  For helm specific commands such as candidate navigation and marking, refer to [helm's](https://github.com/emacs-helm/helm) documentation or run ```C-h m``` from within the evalator session.
 
-Action                                                | Action shortcut      | Description
-------------------------------------------------------|----------------------|-------------------------------
-```evalator-action-confirm-make-or-transform```       | <kbd>RET</kbd>       | Accepts initial candidates or transformation then updates history.  If transforming candidates, the expression is evaluated on each candidate with the special arg referring to the candidate's value
-```evalator-action-confirm-transform-collection```    | <kbd>C-c C-c</kbd>   | Accepts transformation and updates history. Expression is evaluated once with the special arg referring to the selected candidates list
-```evalator-action-execute-in-elisp```                | <kbd>C-c C-e</kbd>   | Executes the expression in Elisp on each selected candidate.  The history is not updated and the candidates are not transformed
-```evalator-action-insert-special-arg```              | <kbd>C-;</kbd>       | Inserts the current evaluation context's special arg
-```evalator-action-next```                            | <kbd>C-j</kbd>       | Goes to next history state
-```evalator-action-previous```                        | <kbd>C-l</kbd>       | Goes to previous history state
+Action                                                                                          | Action shortcut      | Description
+------------------------------------------------------------------------------------------------|----------------------|-------------------------------
+<span style="white-space: nowrap;">```evalator-action-confirm-make-or-transform```</span>       | <kbd>RET</kbd>       | Accepts initial candidates or transformation then updates history.  If transforming candidates, the expression is evaluated on each candidate with the special arg referring to the candidate's value
+<span style="white-space: nowrap;">```evalator-action-confirm-transform-collection```</span>    | <kbd>C-c C-c</kbd>   | Accepts transformation and updates history. Expression is evaluated once with the special arg referring to the selected candidates list
+<span style="white-space: nowrap;">```evalator-action-execute-in-elisp```</span>                | <kbd>C-c C-e</kbd>   | Executes the expression in Elisp on each selected candidate.  The history is not updated and the candidates are not transformed
+<span style="white-space: nowrap;">```evalator-action-insert-special-arg```</span>              | <kbd>C-;</kbd>       | Inserts the current evaluation context's special arg
+<span style="white-space: nowrap;">```evalator-action-next```</span>                            | <kbd>C-j</kbd>       | Goes to next history state
+<span style="white-space: nowrap;">```evalator-action-previous```</span>                        | <kbd>C-l</kbd>       | Goes to previous history state
 ### Special Arguments ###
 TODO
 ### History ###
