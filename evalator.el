@@ -227,6 +227,7 @@ accept's an optional ERR-HANDLER to pass to `evalator-try-context-f'."
   (interactive)
   (helm-resume "*helm-evalator*"))
 
+;;;###autoload
 (defun evalator (&optional mode)
   "Start an evalator session.  Accepts an optional MODE."
   (interactive)
