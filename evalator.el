@@ -213,6 +213,7 @@ accept's an optional ERR-HANDLER to pass to `evalator-try-context-f'."
     :nomark t
     :nohighlight t))
 
+;;;###autoload
 (defun evalator-insert-equiv-expr ()
   "Insert the equivalent expression of the previous evalator session into the current buffer."
   (interactive)
@@ -222,6 +223,7 @@ accept's an optional ERR-HANDLER to pass to `evalator-try-context-f'."
                (evalator-history-expression-chain)))
     (message "Error: This command is only allowed when the last evalator session was started with `evalator-explicit'.")))
 
+;;;###autoload
 (defun evalator-resume ()
   "Resume last evalator session."
   (interactive)
@@ -246,6 +248,7 @@ accept's an optional ERR-HANDLER to pass to `evalator-try-context-f'."
           :prompt "Enter Expression: "
           :helm-after-update-hook helm-after-update-hook)))
 
+;;;###autoload
 (defun evalator-explicit ()
   "Start an evalator-session in explicit mode.
 In explicit mode the data generated will always appear as a single
