@@ -27,7 +27,7 @@
 
 (require 'eieio)
 
-(defvar evalator-context-special-arg-default "Ⓔ") ;; x24ba
+(defvar evalator-context-special-arg-default "Ⓔ") ;; Unicode character x24ba
 
 ;; References to data types in the docstrings below are assumed to be elisp types.
 (defclass evalator-context ()
@@ -47,35 +47,62 @@
     :initarg :init
     :custom function
     :documentation
-    "Performs any setup needed before any context evaluation functions
-    are called. All functions below are context evaluation functions.")
+    "() => nil
+
+    Performs any setup needed before any context evaluation functions
+    are called. Function accepts no arguments.  All slot functions
+    below are context evaluation functions.")
 
    (make-equiv-expr
     :initarg :make-equiv-expr
     :custom function
     :documentation
-    "")
+    "(exprs) => string
+
+    This function accepts a single argument, EXPRS, which is the list
+    of expression strings used in the most recent evalator session.
+    It should combine them and return a single expression string as a
+    result.")
 
    (make-candidates
     :initarg :make-candidates
     :custom function
     :documentation
-    "Function evaluates the input data and transforms it so that it
-    can be used as the ':candidates' argument for building a helm
-    source. Function should accept a string or list of strings.
-    Function should return a list of strings")
+    "(input mode initial-p) => cons
+
+    Function converts INPUT into a valid list of helm candidates.  In
+    other words, a list of the stringified representation of the
+    input.  How INPUT is converted depends on both the MODE argument
+    and the INITIAL-P flag.
+
+    If INITIAL-P is non-nil then it is assumed that INPUT came from
+    user input and first needs to be read and evaluated to an elisp
+    object.  If INITIAL-P is nil then it is treated as an elisp
+    object.  If MODE is :explicit then the function will always return
+    a candidate list of one element.  If MODE is some other value then
+    the function will return a candidate list equivalent to the size
+    of the input object.  That means scalars will be returned in a
+    size 1 candidates list.  Vectors and lists will be returned in a
+    candidates list whose size is equal to the size of the
+    collection.")
 
    (transform-candidates
     :initarg :transform-candidates
     :custom function
     :documentation
-    "Function that applies an expression over a selection of
-    candidates.  If no candidates are marked, then the selection will
-    be all candidates.  Otherwise, the selection will be the marked
-    candidates.  Function should accept all current candidates, all
-    marked candidates, and an expression string as arguments. Function
-    should return a list of strings.  Function should throw an error
-    if the transformation fails.")))
+    "(cands expr-str mode &optional collect-p) => cons
+
+    Function accepts a list of candidates, CANDS, and transforms it
+    according to the expression string EXPR-STR.  How CANDS is
+    transformed is determined by both the MODE and optional flag
+    COLLECT-P.  If COLLECT-P is non-nil then EXPR-STR will be
+    evaluated on the entire CANDS list.  If COLLECT-P is nil then
+    EXPR-STR will be evaluated on each candidate in CANDS.  The result
+    of the above operation is passed to the function in the
+    `:make-candidates' as the INPUT argument.  MODE is similarly
+    passed as the MODE argument and `nil' is passed as the INITIAL-P
+    argument.  This function returns the result of the call to the
+    `:make-candidates' function.")))
 
 (defmethod evalator-context-get-special-arg ((context evalator-context))
   (or (eval (slot-value context :special-arg))

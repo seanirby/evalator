@@ -62,7 +62,9 @@
 ;; I'd like to, but this function is called from within a regex match handler,
 ;; Calling one from within another produces unexpected behavior.
 (defun evalator-context-elisp-numbered-arg-num (str)
-  ""
+  "Function initially accepts a string STR of a numbered special arg.
+It is called recursively until it has extracted the number following
+the special arg."
   (let* ((first-char-str (cl-subseq str 0 1))
          (not-num-p (and (equal 0 (string-to-number first-char-str))
                          (not (equal "0" first-char-str)))))
@@ -71,16 +73,36 @@
       (string-to-number str))))
 
 (defun evalator-context-elisp-numbered-arg-pattern (&optional quote-p)
-  ""
+  "Return the regex pattern used to match numbered special args.
+If QUOTE-P is non-nil then a pattern is returned that can also match a
+quoted numbered special arg like `'ⒺN'."
   (let ((frmt (if quote-p "'?%s[0-9]+" "%s[0-9]+")))
     (format frmt (evalator-context-elisp-get-special-arg))))
 
-(defun evalator-context-elisp-make-equiv-expr (exprs)
-  "Create an equivalent expression string from EXPRS.
+(defun evalator-context-elisp-subst-numbered-special-args (expr-str c)
+  "Substitute any special args of the form `ⒺN' in EXPR-STR with the Nth element in C."
+  (let ((pattern (evalator-context-elisp-numbered-arg-pattern))
+        (match-f (lambda (m)
+                   (prin1-to-string (elt c (string-to-number (cl-subseq m 1)))))))
+    (replace-regexp-in-string pattern match-f expr-str t t)))
 
-Accepts a list of expressions, EXPRS, and return the equivalent
-expression by substituting any special args with the expression
-before it."
+(defun evalator-context-elisp-subst-identity-special-args (expr-str c)
+  "Substitute any special args of the form `Ⓔ' in EXPR-STR with C."
+  (let ((sa (evalator-context-elisp-get-special-arg)))
+    (replace-regexp-in-string sa (prin1-to-string c) expr-str t t)))
+
+(defun evalator-context-elisp-subst-special-args (expr-str c)
+  "Substitute any special args in EXPR-STR.
+Identity special args like `Ⓔ' are substituted with the value of C.
+Numbered special args like `ⒺN' are substituted with the Nth element
+in C."
+  (let* ((num-args-replaced (evalator-context-elisp-subst-numbered-special-args expr-str c))
+         (num-and-identity-args-replaced
+          (evalator-context-elisp-subst-identity-special-args num-args-replaced c)))
+    num-and-identity-args-replaced))
+
+(defun evalator-context-elisp-make-equiv-expr (exprs)
+  "See slot documentation in evalator-context.el."
   (let* ((pattern-numbered (evalator-context-elisp-numbered-arg-pattern t))
          (pattern-identity (format "'?%s" (evalator-context-elisp-get-special-arg)))
          (match-f (lambda (str m)
@@ -100,39 +122,8 @@ before it."
                   num-and-identity-args-replaced))))
     (cl-reduce sub exprs)))
 
-(defun evalator-context-elisp-subst-numbered-special-args (expr-str c)
-  ""
-  (let ((pattern (evalator-context-elisp-numbered-arg-pattern))
-        (match-f (lambda (m)
-                   (prin1-to-string (elt c (string-to-number (cl-subseq m 1)))))))
-    (replace-regexp-in-string pattern match-f expr-str t t)))
-
-(defun evalator-context-elisp-subst-identity-special-args (expr-str c)
-  ""
-  (let ((sa (evalator-context-elisp-get-special-arg)))
-    (replace-regexp-in-string sa (prin1-to-string c) expr-str t t)))
-
-(defun evalator-context-elisp-subst-special-args (expr-str c)
-  ""
-  (let* ((num-args-replaced (evalator-context-elisp-subst-numbered-special-args expr-str c))
-         (num-and-identity-args-replaced
-          (evalator-context-elisp-subst-identity-special-args num-args-replaced c)))
-    num-and-identity-args-replaced))
-
 (defun evalator-context-elisp-make-candidates (input mode initial-p)
-  "Convert INPUT into a valid list of helm candidates.
-
-In other words, a list of the stringified representation of the
-input.  How INPUT is converted depends on both the MODE argument and
-the INITIAL-P flag.  If INITIAL-P is non-nil then it is assumed that
-INPUT came from user input and first needs to be read and evaluated to
-an elisp object.  If INITIAL-P is nil then it is treated as an elisp
-object.  If MODE is :explicit then the function will always return a
-candidate list of one element.  If MODE is some other value then the
-function will return a candidate list equivalent to the size of the
-input object.  That means scalars will be returned in a size 1
-candidates list.  Vectors and lists will be returned in a candidates
-list whose size is equal to the size of the collection."
+  "See slot documentation in evalator-context.el."
   (let* ((data (if initial-p (eval (read input)) input))
          (to-obj-string (lambda (x)
                           (prin1-to-string x))))
@@ -144,7 +135,7 @@ list whose size is equal to the size of the collection."
      (t (list (funcall to-obj-string data))))))
 
 (defun evalator-context-elisp-transform-candidates (cands expr-str mode &optional collect-p)
-  ""
+  "See slot documentation in evalator-context.el."
   (let ((cands-xfrmd (if collect-p
                          (evalator-context-elisp-eval expr-str (mapcar 'read cands))
                        (mapcar (lambda (c)
