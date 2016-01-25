@@ -153,7 +153,7 @@
 
 (ert-deftest evalator-context-elisp-eval-tests ()
   (should (equal 2
-                 (evalator-context-elisp-eval "(+ 1 1)" nil))))
+                 (evalator-context-elisp-eval "(+ 1 1)"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; evalator-context-elisp-test.el ends here

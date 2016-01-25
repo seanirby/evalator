@@ -101,6 +101,10 @@ in C."
           (evalator-context-elisp-subst-identity-special-args num-args-replaced c)))
     num-and-identity-args-replaced))
 
+(defun evalator-context-elisp-eval (expr-str)
+  "Evaluate the expression string, EXPR-STR."
+  (eval (read expr-str)))
+
 (defun evalator-context-elisp-make-equiv-expr (exprs)
   "See slot documentation in evalator-context.el."
   (let* ((pattern-numbered (evalator-context-elisp-numbered-arg-pattern t))
@@ -137,16 +141,14 @@ in C."
 (defun evalator-context-elisp-transform-candidates (cands expr-str mode &optional collect-p)
   "See slot documentation in evalator-context.el."
   (let ((cands-xfrmd (if collect-p
-                         (evalator-context-elisp-eval expr-str (mapcar 'read cands))
+                         (evalator-context-elisp-eval
+                          (evalator-context-elisp-subst-special-args
+                           expr-str (mapcar 'read cands)))
                        (mapcar (lambda (c)
-                                 (evalator-context-elisp-eval expr-str (read c))) cands))))
+                                 (evalator-context-elisp-eval
+                                  (evalator-context-elisp-subst-special-args
+                                   expr-str (read c)))) cands))))
     (evalator-context-elisp-make-candidates cands-xfrmd mode nil)))
-
-(defun evalator-context-elisp-eval (expr-str c)
-  "Evaluate the expression string, EXPR-STR.
-Substitutes any special args in EXPR-STR, with candidate C(or the
-element within C) and evaluates the final expression."
-  (eval (read (evalator-context-elisp-subst-special-args expr-str c))))
 
 (provide 'evalator-context-elisp)
 
