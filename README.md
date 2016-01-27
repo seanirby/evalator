@@ -1,3 +1,5 @@
+[![MELPA](https://melpa.org/packages/evalator-badge.svg)](https://melpa.org/#/evalator)
+
 # EVALATOR #
 
 ## Introduction ##
@@ -43,16 +45,19 @@ See the [Basic Usage](#basic-usage) section for a detailed walkthrough.
 
 ## Installation ##
 
-*UPDATE WHEN ADDED TO MELPA*
+Evalator is available through the [MELPA](http://melpa.org/) repository.  You can install it by using Emacs's built-in package manager ```package.el```.
+
+If you haven't configured ```package.el```, see [here](https://github.com/milkypostman/melpa#usage) for a short guide on setting it up to use MELPA.
+
+Once configured, you can run ```M-x package-install``` then enter ```evalator``` to install evalator.
 
 ## Setup ##
 
 Add the following to your init file
 ```
-(require 'evalator)
-;; Suggested keybindings
-(global-set-key (kbd "C-c e v") 'evalator)
-(global-set-key (kbd "C-c e e") 'evalator-explicit)
+;;Suggested keybindings
+(global-set-key (kbd "C-c e e") 'evalator)
+(global-set-key (kbd "C-c e x") 'evalator-explicit)
 (global-set-key (kbd "C-c e r") 'evalator-resume)
 (global-set-key (kbd "C-c e i") 'evalator-insert-equiv-expr)
 ```
