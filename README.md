@@ -36,7 +36,8 @@ Here's what happened:
 * Paste the package names into a lisp list ```'()```
 * Build a string for the shell command I want executed for each package
 * Call the Emacs command ```shell-command``` with each of the strings from before
-* Exit evalator and verify the files are created with the right contents
+* Exit evalator using <kbd>C-g</kbd>
+* Verify the files are created with the right contents
 
 See the [Basic Usage](#basic-usage) section for a detailed walkthrough.
 
@@ -80,6 +81,9 @@ Action                                                                          
 <span style="white-space: nowrap;">```evalator-action-insert-special-arg```</span>              | <kbd>C-;</kbd>       | Inserts the current evaluation context's special arg
 <span style="white-space: nowrap;">```evalator-action-next```</span>                            | <kbd>C-j</kbd>       | Goes to next history state
 <span style="white-space: nowrap;">```evalator-action-previous```</span>                        | <kbd>C-l</kbd>       | Goes to previous history state
+
+You can exit the evalator session by quitting the minibuffer.  This command is usually bound to <kbd>C-g</kbd>.
+
 ### Special Arguments ###
 TODO
 ### History ###
