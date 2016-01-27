@@ -227,7 +227,8 @@ accept's an optional ERR-HANDLER to pass to `evalator-try-context-f'."
 (defun evalator-resume ()
   "Resume last evalator session."
   (interactive)
-  (helm-resume "*helm-evalator*"))
+  (let ((print-circle t)) ;; Necessary to support circular lists
+    (helm-resume "*helm-evalator*")))
 
 ;;;###autoload
 (defun evalator (&optional mode)
@@ -235,7 +236,8 @@ accept's an optional ERR-HANDLER to pass to `evalator-try-context-f'."
   (interactive)
   (evalator-state-init mode)
   (evalator-history-push! evalator-candidates-initial "")
-  (let* ((evalator-after-update-hook (copy-sequence helm-after-update-hook))
+  (let* ((print-circle t) ;; Necessary to support circular lists
+         (evalator-after-update-hook (copy-sequence helm-after-update-hook))
          (history-source (evalator-build-history-source))
          (result-source (evalator-build-source evalator-candidates-initial mode)))
 
