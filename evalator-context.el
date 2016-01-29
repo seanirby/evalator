@@ -47,11 +47,14 @@
     :initarg :init
     :custom function
     :documentation
-    "() => nil
+    "() => t or nil
 
     Performs any setup needed before any context evaluation functions
-    are called. Function accepts no arguments.  All slot functions
-    below are context evaluation functions.")
+    are called. All slot functions below are context evaluation
+    functions.  If init returns non-nil then initialization was
+    successful and evalator can be started.  Otherwise, evalator is
+    aborted.  Function should print an error message if initialization
+    failed.")
 
    (make-equiv-expr
     :initarg :make-equiv-expr

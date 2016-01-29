@@ -234,21 +234,21 @@ accept's an optional ERR-HANDLER to pass to `evalator-try-context-f'."
 (defun evalator (&optional mode)
   "Start an evalator session.  Accepts an optional MODE."
   (interactive)
-  (evalator-state-init mode)
-  (evalator-history-push! evalator-candidates-initial "")
-  (let* ((print-circle t) ;; Necessary to support circular lists
-         (evalator-after-update-hook (copy-sequence helm-after-update-hook))
-         (history-source (evalator-build-history-source))
-         (result-source (evalator-build-source evalator-candidates-initial mode)))
+  (when (evalator-state-init mode)
+    (evalator-history-push! evalator-candidates-initial "")
+    (let* ((print-circle t) ;; Necessary to support circular lists
+           (evalator-after-update-hook (copy-sequence helm-after-update-hook))
+           (history-source (evalator-build-history-source))
+           (result-source (evalator-build-source evalator-candidates-initial mode)))
 
-    ;; Prevent history candidate from being selected
-    (add-hook 'evalator-after-update-hook (lambda ()
-                                            (helm-next-line)))
-    
-    (helm :sources (list history-source result-source)
-          :buffer "*helm-evalator*"
-          :prompt "Enter Expression: "
-          :helm-after-update-hook evalator-after-update-hook)))
+      ;; Prevent history candidate from being selected
+      (add-hook 'evalator-after-update-hook (lambda ()
+                                              (helm-next-line)))
+
+      (helm :sources (list history-source result-source)
+            :buffer "*helm-evalator*"
+            :prompt "Enter Expression: "
+            :helm-after-update-hook evalator-after-update-hook))))
 
 ;;;###autoload
 (defun evalator-explicit ()

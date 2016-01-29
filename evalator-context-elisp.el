@@ -42,7 +42,7 @@
    'evalator-context-elisp-special-arg
    
    :init
-   (lambda () nil)
+   'evalator-context-elisp-init
 
    :make-equiv-expr
    'evalator-context-elisp-make-equiv-expr
@@ -57,6 +57,10 @@
 (defun evalator-context-elisp-get-special-arg ()
   "Return special arg from elisp context."
   (evalator-context-get-special-arg evalator-context-elisp))
+
+(defun evalator-context-elisp-init ()
+  "No Elisp initialization needed since this is EMACS."
+  t)
 
 ;; This function is gross because I can't use a regex matching function
 ;; I'd like to, but this function is called from within a regex match handler,
