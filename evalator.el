@@ -111,8 +111,7 @@ used for when you need to produce an aggregate result."
   (interactive)
   (let* ((f (slot-value (plist-get evalator-state :context) :transform-candidates))
          (expr-str helm-pattern)
-         (mode (plist-get evalator-state :mode))
-         (args (list (evalator-get-candidates) expr-str mode t)))
+         (args (list (evalator-get-candidates) expr-str t)))
     (evalator-action-confirm-make-or-transform (list f args))))
 
 (defun evalator-action-insert-special-arg ()
@@ -198,8 +197,8 @@ accept's an optional ERR-HANDLER to pass to `evalator-try-context-f'."
              (expr-str    helm-pattern)
              (mode        (plist-get evalator-state :mode))
              (f-and-args  (if (equal 0 (evalator-history-index))
-                              (list make-f (list expr-str mode t) err-handler)
-                            (list transform-f (list (evalator-get-candidates) expr-str mode) err-handler))))
+                              (list make-f (list expr-str mode) err-handler)
+                            (list transform-f (list (evalator-get-candidates) expr-str nil) err-handler))))
         (apply 'evalator-try-context-f f-and-args)))))
 
 (defun evalator-build-source (candidates mode)

@@ -49,13 +49,13 @@
             (should (equal 0 (evalator-history-index)))
 
             (evalator-action-next)
-            (should (equal 1   (evalator-history-index)))
+            (should (equal 1 (evalator-history-index)))
 
             (evalator-action-next)
             (should (equal 1 (evalator-history-index)))
 
             (evalator-action-previous)
-            (should (equal 0   (evalator-history-index))))))
+            (should (equal 0 (evalator-history-index))))))
 
 (ert-deftest evalator-action-execute-in-elisp ()
   (let ((helm-pattern "pattern"))
@@ -89,7 +89,7 @@
     (with-mock
      (stub slot-value => "f")
      (stub evalator-get-candidates => '("cand-1"))
-     (mock (evalator-action-confirm-make-or-transform '("f" (("cand-1") "pattern" :normal t))))
+     (mock (evalator-action-confirm-make-or-transform '("f" (("cand-1") "pattern" t))))
      (evalator-action-confirm-transform-collect))))
 
 (ert-deftest evalator-action-insert-special-arg-test ()
@@ -167,12 +167,12 @@
      (evalator-candidate-make-or-transform '("f" "args") "err-handler"))
     (with-mock
      (stub evalator-history-index => 0)
-     (mock (evalator-try-context-f * '("pattern" :normal t) *))
+     (mock (evalator-try-context-f * '("pattern" :normal) *))
      (evalator-candidate-make-or-transform))
     (with-mock
      (stub evalator-history-index => 1)
      (stub evalator-get-candidates => '("cand-1"))
-     (mock (evalator-try-context-f * '(("cand-1") "pattern" :normal) *))
+     (mock (evalator-try-context-f * '(("cand-1") "pattern" nil) *))
      (evalator-candidate-make-or-transform))))
 
 ;; Tried to mock the helm-build-sync-source macro but ran into issues

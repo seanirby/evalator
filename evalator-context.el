@@ -93,19 +93,15 @@
     :initarg :transform-candidates
     :custom function
     :documentation
-    "(cands expr-str mode &optional collect-p) => cons
+    "(cands expr-str collect-p) => cons
 
     Function accepts a list of candidates, CANDS, and transforms it
     according to the expression string EXPR-STR.  How CANDS is
-    transformed is determined by both the MODE and optional flag
-    COLLECT-P.  If COLLECT-P is non-nil then EXPR-STR will be
-    evaluated on the entire CANDS list.  If COLLECT-P is nil then
-    EXPR-STR will be evaluated on each candidate in CANDS.  The result
-    of the above operation is passed to the function in the
-    `:make-candidates' as the INPUT argument.  MODE is similarly
-    passed as the MODE argument and `nil' is passed as the INITIAL-P
-    argument.  This function returns the result of the call to the
-    `:make-candidates' function.")))
+    transformed depends on the flag COLLECT-P.  If COLLECT-P is
+    non-nil then EXPR-STR will be evaluated on the entire CANDS list.
+    If COLLECT-P is nil then EXPR-STR will be evaluated on each
+    candidate in CANDS.  The result is then processed so it's a valid
+    helm candidate list then returned.")))
 
 (defmethod evalator-context-get-special-arg ((context evalator-context))
   (or (eval (slot-value context :special-arg))

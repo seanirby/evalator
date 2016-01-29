@@ -130,29 +130,27 @@ in C."
                   num-and-identity-args-replaced))))
     (cl-reduce sub exprs)))
 
-(defun evalator-context-elisp-make-candidates (input mode initial-p)
+(defun evalator-context-elisp-make-candidates (input mode)
   "See slot documentation in evalator-context.el."
-  (let* ((data (if initial-p (eval (read input)) input))
+  (let* ((data (eval (read input)))
          (to-obj-string (lambda (x)
                           (prin1-to-string x))))
     (cond
-     ((equal :explicit mode) (if initial-p
-                                 (list (funcall to-obj-string data))
-                               (list (funcall to-obj-string (car data)))))
+     ((equal :explicit mode) (list (funcall to-obj-string data)))
      ((and (not (stringp data)) (sequencep data)) (mapcar to-obj-string data))
      (t (list (funcall to-obj-string data))))))
 
-(defun evalator-context-elisp-transform-candidates (cands expr-str mode &optional collect-p)
+(defun evalator-context-elisp-transform-candidates (cands expr-str collect-p)
   "See slot documentation in evalator-context.el."
   (let ((cands-xfrmd (if collect-p
-                         (evalator-context-elisp-eval
-                          (evalator-context-elisp-subst-special-args
-                           expr-str (mapcar 'read cands)))
+                         (list (evalator-context-elisp-eval
+                                (evalator-context-elisp-subst-special-args
+                                 expr-str (mapcar 'read cands))))
                        (mapcar (lambda (c)
                                  (evalator-context-elisp-eval
                                   (evalator-context-elisp-subst-special-args
                                    expr-str (read c)))) cands))))
-    (evalator-context-elisp-make-candidates cands-xfrmd mode nil)))
+    (mapcar `prin1-to-string cands-xfrmd)))
 
 (provide 'evalator-context-elisp)
 

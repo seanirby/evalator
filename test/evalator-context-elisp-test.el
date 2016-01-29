@@ -91,65 +91,55 @@
 (ert-deftest evalator-context-elisp-make-candidates-tests ()
   ;;normal mode
   (should (equal '("1" "2" "3")
-                 (mc "'(1 2 3)" :normal t)))
+                 (mc "'(1 2 3)" :normal)))
 
   (should (equal '("1" "2" "3")
-                 (mc "[1 2 3]" :normal t)))
+                 (mc "[1 2 3]" :normal)))
 
   (should (equal '("\"foo\"" "\"bar\"" "\"baz\"")
-                 (mc "'(\"foo\" \"bar\" \"baz\")" :normal t)))
+                 (mc "'(\"foo\" \"bar\" \"baz\")" :normal)))
 
   (should (equal '("\"foo\"" "\"bar\"" "\"baz\"")
-                 (mc "[\"foo\" \"bar\" \"baz\"]" :normal t)))
+                 (mc "[\"foo\" \"bar\" \"baz\"]" :normal)))
 
   (should (equal '("\"foo\"")
-                 (mc "\"foo\"" :normal t)))
+                 (mc "\"foo\"" :normal)))
 
   (should (equal '(":foo")
-                 (mc ":foo" :normal t)))
-
-  (should (equal '("1" "2" "3")
-                 (mc '(1 2 3) :normal nil)))
+                 (mc ":foo" :normal)))
 
   ;;explicit mode
   (should (equal '("(1 2 3)")
-                 (mc "'(1 2 3)" :explicit t)))
+                 (mc "'(1 2 3)" :explicit)))
 
   (should (equal '("[1 2 3]")
-                 (mc "[1 2 3]" :explicit t)))
+                 (mc "[1 2 3]" :explicit)))
 
   (should (equal '("(\"foo\" \"bar\" \"baz\")")
-                 (mc "'(\"foo\" \"bar\" \"baz\")" :explicit t)))
+                 (mc "'(\"foo\" \"bar\" \"baz\")" :explicit)))
 
   (should (equal '("[\"foo\" \"bar\" \"baz\"]")
-                 (mc "[\"foo\" \"bar\" \"baz\"]" :explicit t)))
+                 (mc "[\"foo\" \"bar\" \"baz\"]" :explicit)))
 
   (should (equal '("\"foo\"")
-                 (mc "\"foo\"" :explicit t)))
+                 (mc "\"foo\"" :explicit)))
 
   (should (equal '(":foo")
-                 (mc ":foo" :explicit t)))
-
-  (should (equal '("1")
-                 (mc '(1) :explicit nil)))
-
-  ;; situation should never happen because subsequent(non-initial) calls to make-candidate in explicit mode should only be lists of size 1
-  (should (equal '("1")
-                 (mc '(1 2 3) :explicit nil))))
+                 (mc ":foo" :explicit))))
 
 (ert-deftest evalator-context-elisp-transform-candidates-tests ()
   (let ((evalator-context-elisp-special-arg "@"))
     (should (equal '("1" "2" "3" "4")
-                   (tc '("0" "1" "2" "3") "(+ 1 @)" :normal)))
+                   (tc '("0" "1" "2" "3") "(+ 1 @)" nil)))
 
     (should (equal '("\"foo1\"" "\"bar1\"" "\"baz1\"")
-                   (tc '("\"foo\"" "\"bar\"" "\"baz\"") "(concat @ \"1\")" :normal)))
+                   (tc '("\"foo\"" "\"bar\"" "\"baz\"") "(concat @ \"1\")" nil)))
 
     (should (equal '("4")
-                   (tc '("1" "3") "(cl-reduce '+ '@)" :normal t)))
+                   (tc '("1" "3") "(cl-reduce '+ '@)" t)))
 
     (should (equal '("\"foobar\"")
-                   (tc '("\"foo\"" "\"bar\"") "(concat @0 @1)" :normal t)))))
+                   (tc '("\"foo\"" "\"bar\"") "(concat @0 @1)" t)))))
 
 (ert-deftest evalator-context-elisp-eval-tests ()
   (should (equal 2
