@@ -66,7 +66,7 @@
      (evalator-action-execute-in-elisp))
     (with-mock
      (stub evalator-context-elisp-transform-candidates => (signal 'evalator-error '("error")))
-     (stub message => nil)
+     (stub evalator-message => nil)
      (stub error => t)
      (evalator-action-execute-in-elisp))))
 

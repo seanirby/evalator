@@ -84,14 +84,14 @@ evaluation context.  This action does not transform the candidates."
          (prin1-to-string
           (evalator-context-elisp-transform-candidates (evalator-get-candidates) expr-str nil)))
       (error
-       (message err)))))
+       (evalator-message err)))))
 
 (defun evalator-action-confirm-make-or-transform (&optional f-and-args)
   "Make initial candidates or transform candidates then update history.
 Accepts an optional arg F-AND-ARGS to pass to `evalator-make-or-transform'."
   (interactive)
   (let* ((err-handler (lambda (err-str)
-                        (message (concat "Error: " err-str))
+                        (evalator-message (concat "Error: " err-str))
                         nil))
          (cands (evalator-candidate-make-or-transform f-and-args err-handler)))
     (when cands
@@ -119,6 +119,15 @@ used for when you need to produce an aggregate result."
   "Insert the evalator special arg into the expression prompt."
   (interactive)
   (insert (evalator-context-get-special-arg (plist-get evalator-state :context))))
+
+(defun evalator-message (msg)
+  "Output MSG and append a newline and an instruction to continue."
+  (read-char (concat msg "\n" "Press any key to return to minibuffer."))
+  ;; Hack needed because minibuffer window doesn't resize after printing a multiline message
+  (with-current-buffer (window-buffer (active-minibuffer-window))
+    (let ((txt (minibuffer-contents)))
+      (delete-minibuffer-contents)
+      (insert txt))))
 
 (defun evalator-flash (status)
   "Change the evalator expression prompt face according to STATUS."
@@ -235,6 +244,8 @@ accept's an optional ERR-HANDLER to pass to `evalator-try-context-f'."
   "Start an evalator session.  Accepts an optional MODE."
   (interactive)
   (when (evalator-state-init mode)
+    (add-hook 'minibuffer-setup-hook (lambda ()
+                                       (setq-local minibuffer-message-timeout nil) t nil))
     (evalator-history-push! evalator-candidates-initial "")
     (let* ((print-circle t) ;; Necessary to support circular lists
            (evalator-after-update-hook (copy-sequence helm-after-update-hook))
