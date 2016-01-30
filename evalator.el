@@ -4,7 +4,7 @@
 ;; Author: Sean Irby
 ;; Maintainer: Sean Irby <sean.t.irby@gmail.com>
 ;; URL: http://www.github.com/seanirby/evalator
-;; Version: 0.0.1
+;; Version: 1.0.0
 ;; Keywords: languages, elisp, helm
 ;; Package-Requires: ((helm-core "1.9.1"))
 ;; 
