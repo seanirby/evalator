@@ -75,12 +75,12 @@ Elisp function from within an evalator session that uses a different
 evaluation context.  This action does not transform the candidates."
   (interactive)
   (let* ((spec-arg-elisp (evalator-context-get-special-arg evalator-context-elisp))
-         (spec-arg-curr  (evalator-context-get-special-arg (plist-get evalator-state :context)))
+         (spec-arg-curr  (evalator-context-get-special-arg (evalator-state-context)))
          (expr-str (if (equal spec-arg-elisp spec-arg-curr)
                        helm-pattern
                      (replace-regexp-in-string spec-arg-curr spec-arg-elisp helm-pattern))))
     (condition-case err
-        (message
+       (message
          (prin1-to-string
           (evalator-context-elisp-transform-candidates (evalator-get-candidates) expr-str nil)))
       (error
@@ -109,7 +109,7 @@ to the entire candidate selection.  Second, the current expression is
 evaluated only once to produce a single candidate.  This action is
 used for when you need to produce an aggregate result."
   (interactive)
-  (let* ((f (slot-value (plist-get evalator-state :context) :transform-candidates))
+  (let* ((f (slot-value (evalator-state-context) :transform-candidates))
          (expr-str helm-pattern)
          (args (list (evalator-get-candidates) expr-str t)))
     (evalator-action-confirm-make-or-transform (list f args))))
@@ -117,7 +117,7 @@ used for when you need to produce an aggregate result."
 (defun evalator-action-insert-special-arg ()
   "Insert the evalator special arg into the expression prompt."
   (interactive)
-  (insert (evalator-context-get-special-arg (plist-get evalator-state :context))))
+  (insert (evalator-context-get-special-arg (evalator-state-context))))
 
 (defun evalator-message (msg)
   "Output MSG and append a newline and an instruction to continue."
@@ -192,8 +192,8 @@ accept's an optional ERR-HANDLER to pass to `evalator-try-context-f'."
   (with-helm-current-buffer
     (if f-and-args
         (apply 'evalator-try-context-f (append f-and-args (list err-handler)))
-      (let* ((make-f      (slot-value (plist-get evalator-state :context) :make-candidates))
-             (transform-f (slot-value (plist-get evalator-state :context) :transform-candidates))
+      (let* ((make-f      (slot-value (evalator-state-context) :make-candidates))
+             (transform-f (slot-value (evalator-state-context) :transform-candidates))
              (expr-str    helm-pattern)
              (mode        (plist-get evalator-state :mode))
              (f-and-args  (if (equal 0 (evalator-history-index))
@@ -227,7 +227,7 @@ accept's an optional ERR-HANDLER to pass to `evalator-try-context-f'."
   (interactive)
   (if (equal :explicit (plist-get evalator-state :mode))
       (insert (funcall
-               (slot-value (plist-get evalator-state :context) :make-equiv-expr)
+               (slot-value (evalator-state-context) :make-equiv-expr)
                (evalator-history-expression-chain)))
     (message "Error: This command is only allowed when the last evalator session was started with `evalator-explicit'.")))
 

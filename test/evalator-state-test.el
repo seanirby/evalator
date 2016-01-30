@@ -26,6 +26,7 @@
 
 
 (require 'ert)
+(require 'el-mock)
 (require 'evalator-state)
 
 (ert-deftest evalator-state-init-test ()
@@ -41,5 +42,9 @@
       (should-not (equal evalator-state-default evalator-state))
       (should (equal :explicit (plist-get evalator-state :mode))))))
 
+(ert-deftest evalator-state-context-test ()
+  (let* ((evalator-state (list :context "foo")))
+    (should (equal "foo"
+                   (evalator-state-context)))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; evalator-state-test.el ends here

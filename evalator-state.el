@@ -38,10 +38,18 @@
 
 (defun evalator-state-init (&optional mode)
   "Set `evalator-state' to the value of `evalator-state-default'.
+Sets the state's context if user has defined a value for evalator-context-to-use.
 Sets the state's MODE if necessary and performs any context initialization"
   (setq evalator-state (copy-sequence evalator-state-default))
-  (when mode (evalator-utils-put! evalator-state :mode mode))
-  (funcall (slot-value (plist-get evalator-state :context) :init)))
+  (when evalator-context-to-use ;; might have a global or buffer local value
+    (evalator-utils-put! evalator-state :context evalator-context-to-use))
+  (when mode
+    (evalator-utils-put! evalator-state :mode mode))
+  (funcall (slot-value (evalator-state-context) :init)))
+
+(defun evalator-state-context ()
+  "Return the state's context object."
+  (plist-get evalator-state :context))
 
 (provide 'evalator-state)
 
