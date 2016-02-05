@@ -1,4 +1,6 @@
 [![MELPA](https://melpa.org/packages/evalator-badge.svg)](https://melpa.org/#/evalator)
+[![MELPA Stable](http://stable.melpa.org/packages/evalator-badge.svg)](http://stable.melpa.org/#/evalator)
+
 
 # EVALATOR #
 
