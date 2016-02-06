@@ -27,7 +27,6 @@
 
 (require 'eieio)
 
-(defvar evalator-context-to-use nil)
 (defvar evalator-context-special-arg-default "Ⓔ") ;; Unicode character x24ba
 
 ;; References to data types in the docstrings below are assumed to be elisp types.

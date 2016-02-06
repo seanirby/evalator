@@ -36,13 +36,18 @@
 
 (defvar evalator-state (copy-sequence evalator-state-default))
 
-(defun evalator-state-init (&optional mode)
-  "Set `evalator-state' to the value of `evalator-state-default'.
-Sets the state's context if user has defined a value for evalator-context-to-use.
-Sets the state's MODE if necessary and performs any context initialization"
+(defun evalator-state-init (&optional mode context)
+  "Initialize the `evalator-state' var.
+
+First, `evalator-state-default' is copied to `evalator-state'.
+Then, the state's `:mode' is set to MODE if MODE is non-nil.
+Then, the state's `context' is set to CONTEXT if CONTEXT is non-nil.
+Finally the function defined in the context's `:init' slot is called
+to perform any context specific initialization.
+"
   (setq evalator-state (copy-sequence evalator-state-default))
-  (when evalator-context-to-use ;; might have a global or buffer local value
-    (evalator-utils-put! evalator-state :context evalator-context-to-use))
+  (when context ;; might have a global or buffer local value
+    (evalator-utils-put! evalator-state :context context))
   (when mode
     (evalator-utils-put! evalator-state :mode mode))
   (funcall (slot-value (evalator-state-context) :init)))

@@ -32,19 +32,25 @@
 (ert-deftest evalator-state-init-test ()
   "Tests that 'evalator state' is initialized with the value of
 'evalator-state-default'"
-  (let ((evalator-state-default (copy-sequence evalator-state-default))
-        (evalator-state nil))
-    (progn
-      (evalator-state-init :normal)
-      (should (equal evalator-state-default evalator-state))
+  (let ((evalator-foo-context t)
+        (evalator-state-default (copy-sequence evalator-state-default)))
+    (with-mock
+     (mock (slot-value * :init) => (lambda () t))
+     (not-called evalator-utils-put!)
+     (should (evalator-state-init)))
+    (with-mock
+     (mock (slot-value * :init) => (lambda () t))
+     (mock (evalator-utils-put! * * *) :times 1)
+     (should (evalator-state-init :explicit)))
+    (with-mock
+     (mock (slot-value * :init) => (lambda () t))
+     (mock (evalator-utils-put! * * *) :times 2)
+     (should (evalator-state-init :explicit evalator-foo-context)))))
 
-      (evalator-state-init :explicit)
-      (should-not (equal evalator-state-default evalator-state))
-      (should (equal :explicit (plist-get evalator-state :mode))))))
 
-(ert-deftest evalator-state-context-test ()
-  (let* ((evalator-state (list :context "foo")))
-    (should (equal "foo"
-                   (evalator-state-context)))))
+;; (ert-deftest evalator-state-context-test ()
+;;   (let* ((evalator-state (list :context "foo")))
+;;     (should (equal "foo"
+;;                    (evalator-state-context)))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; evalator-state-test.el ends here

@@ -239,10 +239,18 @@ accept's an optional ERR-HANDLER to pass to `evalator-try-context-f'."
     (helm-resume "*helm-evalator*")))
 
 ;;;###autoload
-(defun evalator (&optional mode)
-  "Start an evalator session.  Accepts an optional MODE."
+(defun evalator (&optional mode context)
+  "Start an evalator session.  Accepts an optional MODE and CONTEXT.
+
+If MODE is nil evalator will behave normally. If MODE is a supported
+mode keyword then that mode will be used during the session.
+
+Current accepted values for MODE:
+
+`:explicit'
+"
   (interactive)
-  (when (evalator-state-init mode)
+  (when (evalator-state-init mode context)
     (add-hook 'minibuffer-setup-hook (lambda ()
                                        (setq-local minibuffer-message-timeout nil) t nil))
     (evalator-history-push! evalator-candidates-initial "")

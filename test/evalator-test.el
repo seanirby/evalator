@@ -210,27 +210,20 @@
    (evalator-resume)))
 
 (ert-deftest evalator-test ()
-  (let ((state-init-p nil)
+  (let ((evalator-foo-context t)
+        (state-init-p nil)
         (history nil)
         (evalator-candidates-initial '("foo")))
-    (noflet ((evalator-state-init (_)
-                                  (setq state-init-p t))
-             (evalator-history-push! (cands expr)
-                                     (setq history (list :candidates cands
-                                                         :expression expr)))
-             (evalator-build-history-source () '())
-             (evalator-build-source (cands mode) `(,cands ,mode))
-             (helm (&rest args) (cadr args)))
-
-            ;;helm should be called with the result from evalator-build-source as the :source
-            (should (equal '(() (("foo") :explicit))
-                           (evalator :explicit)))
-
-            (should state-init-p)
-
-            (should (equal (list :candidates '("foo")
-                                 :expression "")
-                           history)))))
+    (with-mock
+     (mock (evalator-state-init :explicit evalator-foo-context) => t)
+     (mock (evalator-history-push! * *) :times 1)
+     (stub evalator-build-history-source => t)
+     (mock (evalator-build-source '("foo") :explicit) => t)
+     (mock (helm :sources '(t t)
+                 :buffer  "*helm-evalator*"
+                 :prompt  "Enter Expression: "
+                 :helm-after-update-hook *) => t)
+     (should (evalator :explicit evalator-foo-context)))))
 
 (ert-deftest evalator-explicit-test ()
   (with-mock
