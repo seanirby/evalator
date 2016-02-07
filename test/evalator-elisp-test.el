@@ -1,4 +1,4 @@
-;;; evalator-context-elisp-test.el --- Test for evalator-context-elisp-test.el
+;;; evalator-elisp-test.el --- Test for evalator-elisp-test.el
 ;; 
 ;; Author: Sean Irby
 ;; Copyright © , Sean Irby
@@ -26,56 +26,56 @@
 
 
 (require 'ert)
-(require 'evalator-context-elisp)
+(require 'evalator-elisp)
 
-(defalias 'ssa 'evalator-context-elisp-subst-special-args)
-(defalias 'mc 'evalator-context-elisp-make-candidates)
-(defalias 'tc 'evalator-context-elisp-transform-candidates)
+(defalias 'ssa 'evalator-elisp-subst-special-args)
+(defalias 'mc 'evalator-elisp-make-candidates)
+(defalias 'tc 'evalator-elisp-transform-candidates)
 
-(ert-deftest evalator-context-elisp-get-special-arg-tests ()
+(ert-deftest evalator-elisp-get-special-arg-tests ()
   (let ((evalator-context-special-arg-default "@"))
-    (let ((evalator-context-elisp-special-arg "$"))
+    (let ((evalator-elisp-special-arg "$"))
           (should (equal "$"
-                         (evalator-context-elisp-get-special-arg))))
+                         (evalator-elisp-get-special-arg))))
     (should (equal "@"
-                       (evalator-context-elisp-get-special-arg)))))
+                       (evalator-elisp-get-special-arg)))))
 
-(ert-deftest evalator-context-elisp-numbered-arg-num-tests ()
+(ert-deftest evalator-elisp-numbered-arg-num-tests ()
   (should (equal 123
-                 (evalator-context-elisp-numbered-arg-num "@123")))
-
-  (should (equal 123
-                 ;; Not expected input
-                 (evalator-context-elisp-numbered-arg-num "123")))
+                 (evalator-elisp-numbered-arg-num "@123")))
 
   (should (equal 123
                  ;; Not expected input
-                 (evalator-context-elisp-numbered-arg-num "foo bar baz @123"))))
+                 (evalator-elisp-numbered-arg-num "123")))
 
-(ert-deftest evalator-context-elisp-numbered-arg-pattern-tests ()
-  (let ((evalator-context-elisp-special-arg "@"))
+  (should (equal 123
+                 ;; Not expected input
+                 (evalator-elisp-numbered-arg-num "foo bar baz @123"))))
+
+(ert-deftest evalator-elisp-numbered-arg-pattern-tests ()
+  (let ((evalator-elisp-special-arg "@"))
     (should (equal "@[0-9]+"
-                   (evalator-context-elisp-numbered-arg-pattern)))
+                   (evalator-elisp-numbered-arg-pattern)))
     (should (equal "'?@[0-9]+"
-                   (evalator-context-elisp-numbered-arg-pattern t)))))
+                   (evalator-elisp-numbered-arg-pattern t)))))
 
-(ert-deftest evalator-context-elisp-make-equiv-expr-tests ()
-  (let ((evalator-context-elisp-special-arg "@"))
+(ert-deftest evalator-elisp-make-equiv-expr-tests ()
+  (let ((evalator-elisp-special-arg "@"))
     (should (equal "(cons (elt (list 1 2 3) 0) (list 1 2 3))"
-                   (evalator-context-elisp-make-equiv-expr '("(list 1 2 3)" "(cons @0 '@)"))))))
+                   (evalator-elisp-make-equiv-expr '("(list 1 2 3)" "(cons @0 '@)"))))))
 
-(ert-deftest evalator-context-elisp-subst-numbered-special-args-tests ()
-  (let ((evalator-context-elisp-special-arg "@"))
+(ert-deftest evalator-elisp-subst-numbered-special-args-tests ()
+  (let ((evalator-elisp-special-arg "@"))
     (should (equal "(+ @ 3 7)"
-                   (evalator-context-elisp-subst-numbered-special-args "(+ @ @0 @1)" '(3 7))))))
+                   (evalator-elisp-subst-numbered-special-args "(+ @ @0 @1)" '(3 7))))))
 
-(ert-deftest evalator-context-elisp-subst-identity-special-args-tests ()
-  (let ((evalator-context-elisp-special-arg "@"))
+(ert-deftest evalator-elisp-subst-identity-special-args-tests ()
+  (let ((evalator-elisp-special-arg "@"))
     (should (equal "(+ 1 1)"
-                   (evalator-context-elisp-subst-identity-special-args "(+ @ @)" 1)))))
+                   (evalator-elisp-subst-identity-special-args "(+ @ @)" 1)))))
 
-(ert-deftest evalator-context-elisp-subst-special-args-tests ()
-  (let ((evalator-context-elisp-special-arg "@"))
+(ert-deftest evalator-elisp-subst-special-args-tests ()
+  (let ((evalator-elisp-special-arg "@"))
     (should (equal "'(+ 1 1)"
                    (ssa "'(+ 1 1)" nil)))
 
@@ -88,7 +88,7 @@
     (should (equal "1"
                    (ssa "@" 1)))))
 
-(ert-deftest evalator-context-elisp-make-candidates-tests ()
+(ert-deftest evalator-elisp-make-candidates-tests ()
   ;;normal mode
   (should (equal '("1" "2" "3")
                  (mc "'(1 2 3)" :normal)))
@@ -127,8 +127,8 @@
   (should (equal '(":foo")
                  (mc ":foo" :explicit))))
 
-(ert-deftest evalator-context-elisp-transform-candidates-tests ()
-  (let ((evalator-context-elisp-special-arg "@"))
+(ert-deftest evalator-elisp-transform-candidates-tests ()
+  (let ((evalator-elisp-special-arg "@"))
     (should (equal '("1" "2" "3" "4")
                    (tc '("0" "1" "2" "3") "(+ 1 @)" nil)))
 
@@ -141,9 +141,9 @@
     (should (equal '("\"foobar\"")
                    (tc '("\"foo\"" "\"bar\"") "(concat @0 @1)" t)))))
 
-(ert-deftest evalator-context-elisp-eval-tests ()
+(ert-deftest evalator-elisp-eval-tests ()
   (should (equal 2
-                 (evalator-context-elisp-eval "(+ 1 1)"))))
+                 (evalator-elisp-eval "(+ 1 1)"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; evalator-context-elisp-test.el ends here
+;;; evalator-elisp-test.el ends here

@@ -26,6 +26,7 @@
 
 
 (require 'eieio)
+(require 'evalator-config)
 
 (defvar evalator-context-special-arg-default "Ⓔ") ;; Unicode character x24ba
 
@@ -106,6 +107,30 @@
 (defmethod evalator-context-get-special-arg ((context evalator-context))
   (or (eval (slot-value context :special-arg))
       evalator-context-special-arg-default))
+
+(defun evalator-context-get (&optional context)
+  "Find an evaluation context to use for an evalator session.
+
+If CONTEXT is non-nil, then the result of calling CONTEXT's function
+definition will be used as the session's evaluation context.
+
+If CONTEXT is nil, then the current buffer's major mode will be
+searched for in `evalator-config-mode-context-alist'.  If a match is found,
+the context associated with that major mode is used in the evalator
+session.  If no match is found, an elisp evaluation context is used
+instead.
+"
+  (let* ((mm (buffer-local-value 'major-mode (current-buffer)))
+         (context-f-sym (or context
+                            (cdr (assoc mm evalator-config-mode-context-alist))
+                            'evalator-elisp-context))
+         (context-f (symbol-function context-f-sym)))
+    (if (autoloadp context-f)
+        (progn
+          (autoload-do-load context-f context-f-sym)
+          (funcall (symbol-function context-f-sym)))
+      (funcall context-f))
+    context-f-sym))
 
 (provide 'evalator-context)
 

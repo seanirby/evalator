@@ -30,8 +30,9 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'evalator-config)
 (require 'evalator-context)
-(require 'evalator-context-elisp)
+(require 'evalator-elisp)
 (require 'evalator-faces)
 (require 'evalator-history)
 (require 'evalator-key-map)
@@ -41,14 +42,10 @@
 
 (defvar evalator-candidates-initial '("Enter an expression below to generate initial data")
   "Informational candidate used on evalator startup.")
+
 (defvar evalator-error nil
   "Error symbol used for signaling evalator errors.")
 (put 'evalator-error 'error-conditions '(error))
-
-(defvar evalator-prompt-f
-  (lambda ()
-    (format "%s of %s" (+ 1 (evalator-history-index)) (length (evalator-history))))
-  "Var's value is a function used to generate the evalator prompt.")
 
 (defun evalator-action-previous ()
   "Go to the next history state and update the evalator session."
@@ -74,15 +71,15 @@ This function is useful if you want to execute an Emacs command or
 Elisp function from within an evalator session that uses a different
 evaluation context.  This action does not transform the candidates."
   (interactive)
-  (let* ((spec-arg-elisp (evalator-context-get-special-arg evalator-context-elisp))
+  (let* ((spec-arg-elisp (evalator-context-get-special-arg (evalator-elisp-context)))
          (spec-arg-curr  (evalator-context-get-special-arg (evalator-state-context)))
          (expr-str (if (equal spec-arg-elisp spec-arg-curr)
                        helm-pattern
                      (replace-regexp-in-string spec-arg-curr spec-arg-elisp helm-pattern))))
     (condition-case err
-       (message
+        (message
          (prin1-to-string
-          (evalator-context-elisp-transform-candidates (evalator-get-candidates) expr-str nil)))
+          (evalator-elisp-transform-candidates (evalator-get-candidates) expr-str nil)))
       (error
        (evalator-message err)))))
 
@@ -216,7 +213,7 @@ accept's an optional ERR-HANDLER to pass to `evalator-try-context-f'."
   "Build a source that will show the current point in history."
   (helm-build-dummy-source "Evalator History"
     :filtered-candidate-transformer (lambda (_c _s)
-                                      (list (funcall evalator-prompt-f)))
+                                      (list (funcall evalator-config-prompt-f)))
     :header-line "History"
     :nomark t
     :nohighlight t))
@@ -229,7 +226,7 @@ accept's an optional ERR-HANDLER to pass to `evalator-try-context-f'."
       (insert (funcall
                (slot-value (evalator-state-context) :make-equiv-expr)
                (evalator-history-expression-chain)))
-    (message "Error: This command is only allowed when the last evalator session was started with `evalator-explicit'.")))
+    (message "Error: This command is only allowed when the last evalator session in explicit mode.")))
 
 ;;;###autoload
 (defun evalator-resume ()
@@ -240,17 +237,30 @@ accept's an optional ERR-HANDLER to pass to `evalator-try-context-f'."
 
 ;;;###autoload
 (defun evalator (&optional mode context)
-  "Start an evalator session.  Accepts an optional MODE and CONTEXT.
+  "Start an evalator session.
 
-If MODE is nil evalator will behave normally. If MODE is a supported
-mode keyword then that mode will be used during the session.
+Function accepts an optional MODE keyword and a CONTEXT symbol.
 
-Current accepted values for MODE:
+If MODE is non-nil and a currently supported mode value then that mode
+will be used for the session.
+
+Below are currently supported values for MODE:
 
 `:explicit'
+
+If MODE is nil evalator will start in normal mode.
+
+If CONTEXT is non-nil, then the result of calling CONTEXT's function
+definition will be used as the session's evaluation context.
+
+If CONTEXT is nil, then the current buffer's major mode will be
+searched for in `evalator-config-mode-context-alist'.  If a match is
+found, the context associated with that major mode is used in the
+evalator session.  If no match is found, an elisp evaluation context
+is used instead.
 "
   (interactive)
-  (when (evalator-state-init mode context)
+  (when (evalator-state-init mode (evalator-context-get context))
     (add-hook 'minibuffer-setup-hook (lambda ()
                                        (setq-local minibuffer-message-timeout nil) t nil))
     (evalator-history-push! evalator-candidates-initial "")
@@ -269,13 +279,16 @@ Current accepted values for MODE:
             :helm-after-update-hook evalator-after-update-hook))))
 
 ;;;###autoload
-(defun evalator-explicit ()
-  "Start an evalator-session in explicit mode.
-In explicit mode the data generated will always appear as a single
-candidate.  This is the only mode that allows an equivalanet
-expression to be generated."
+(defun evalator-explicit (&optional context)
+  "Helper function to start an evalator-session in explicit mode.
+
+In explicit mode the data generated will always be represented as a
+single candidate.  This is the only mode that allows an equivalent
+expression of the session to be generated through
+`evalator-insert-equiv-expr'.
+"
   (interactive)
-  (evalator :explicit))
+  (evalator :explicit context))
 
 (provide 'evalator)
 

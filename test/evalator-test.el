@@ -31,12 +31,6 @@
   (require 'cl))
 (require 'evalator)
 
-(ert-deftest evalator-prompt-f-tests ()
-  (noflet ((evalator-history-index () 0)
-           (evalator-history () '(length of 3)))
-          (should (equal "1 of 3"
-                         (funcall evalator-prompt-f)))))
-
 (ert-deftest evalator-action-previous-and-next-tests ()
   (let ((evalator-state (list :history [(:candidates '())
                                         (:candidates '())]
@@ -57,18 +51,31 @@
             (evalator-action-previous)
             (should (equal 0 (evalator-history-index))))))
 
-(ert-deftest evalator-action-execute-in-elisp ()
-  (let ((helm-pattern "pattern"))
-    (with-mock
-     (stub evalator-get-candidates => '("cand-1"))
-     (mock (evalator-context-elisp-transform-candidates '("cand-1") "pattern" nil) => '("cand-1-xfrmd"))
-     (mock (message "(\"cand-1-xfrmd\")") => t)
-     (evalator-action-execute-in-elisp))
-    (with-mock
-     (stub evalator-context-elisp-transform-candidates => (signal 'evalator-error '("error")))
-     (stub evalator-message => nil)
-     (stub error => t)
-     (evalator-action-execute-in-elisp))))
+(ert-deftest evalator-action-execute-in-elisp-test ()
+  (let ((helm-pattern "@ !"))
+    (noflet ((evalator-context-get-special-arg (arg) arg))
+            (with-mock
+             (stub evalator-elisp-context => "!")
+             (stub evalator-state-context => "@")
+             (stub evalator-get-candidates => '("cand-1"))
+             (mock (evalator-elisp-transform-candidates '("cand-1") "! !" nil) => '("cand-1-xfrmd"))
+             (mock (message "(\"cand-1-xfrmd\")") => t)
+             (evalator-action-execute-in-elisp))
+            (with-mock
+             (stub evalator-elisp-context => "@")
+             (stub evalator-state-context => "@")
+             (stub evalator-get-candidates => '("cand-1"))
+             (mock (evalator-elisp-transform-candidates '("cand-1") "@ !" nil) => '("cand-1-xfrmd"))
+             (mock (message "(\"cand-1-xfrmd\")") => t)
+             (evalator-action-execute-in-elisp))
+            (with-mock
+             (stub evalator-elisp-context)
+             (stub evalator-state-context)
+             (stub evalator-get-candidates)
+             (stub evalator-elisp-transform-candidates => (signal 'evalator-error '("error")))
+             (stub evalator-message => nil)
+             (stub error => t)
+             (evalator-action-execute-in-elisp))  )))
 
 (ert-deftest evalator-action-confirm-make-or-transform-test ()
   ;;Successful transformation
@@ -93,11 +100,13 @@
      (evalator-action-confirm-transform-collect))))
 
 (ert-deftest evalator-action-insert-special-arg-test ()
-  (let ((evalator-context-special-arg-default "Ⓔ"))
-    (should (equal "Ⓔ"
-                   (with-temp-buffer
-                     (evalator-action-insert-special-arg)
-                     (buffer-string))))))
+  (with-mock
+   (stub evalator-state-context)
+   (stub evalator-context-get-special-arg => "@")
+   (should (equal "@"
+                  (with-temp-buffer
+                    (evalator-action-insert-special-arg)
+                    (buffer-string))))))
 
 (ert-deftest evalator-flash-test ()
   (with-mock
@@ -163,13 +172,16 @@
 (ert-deftest evalator-make-or-transform-test ()
   (let ((helm-pattern "pattern"))
     (with-mock
+     (stub slot-value)
      (mock (evalator-try-context-f "f" "args" "err-handler") => t)
      (evalator-candidate-make-or-transform '("f" "args") "err-handler"))
     (with-mock
+     (stub slot-value)
      (stub evalator-history-index => 0)
      (mock (evalator-try-context-f * '("pattern" :normal) *))
      (evalator-candidate-make-or-transform))
     (with-mock
+     (stub slot-value)
      (stub evalator-history-index => 1)
      (stub evalator-get-candidates => '("cand-1"))
      (mock (evalator-try-context-f * '(("cand-1") "pattern" nil) *))
@@ -195,6 +207,7 @@
    (stub slot-value => (lambda (exprs) (car exprs)))
    (stub evalator-history-expression-chain => '("(+ 1 1)"))
    (stub message => "Error message output")
+   (stub evalator-state-context)
    (let ((evalator-state  (list :mode :explicit)))
      (with-temp-buffer
        (evalator-insert-equiv-expr)
@@ -210,12 +223,13 @@
    (evalator-resume)))
 
 (ert-deftest evalator-test ()
-  (let ((evalator-foo-context t)
+  (let ((evalator-foo-context "foo")
         (state-init-p nil)
         (history nil)
         (evalator-candidates-initial '("foo")))
     (with-mock
-     (mock (evalator-state-init :explicit evalator-foo-context) => t)
+     (mock (evalator-context-get 'evalator-foo-context) => evalator-foo-context)
+     (mock (evalator-state-init :explicit "foo") => t)
      (mock (evalator-history-push! * *) :times 1)
      (stub evalator-build-history-source => t)
      (mock (evalator-build-source '("foo") :explicit) => t)
@@ -223,11 +237,11 @@
                  :buffer  "*helm-evalator*"
                  :prompt  "Enter Expression: "
                  :helm-after-update-hook *) => t)
-     (should (evalator :explicit evalator-foo-context)))))
+     (should (evalator :explicit 'evalator-foo-context)))))
 
 (ert-deftest evalator-explicit-test ()
   (with-mock
-   (mock (evalator :explicit) => t)
+   (mock (evalator :explicit *) => t)
    (evalator-explicit)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -27,9 +27,10 @@
 
 (require 'helm)
 (require 'evalator-utils)
-(require 'evalator-context-elisp)
+(require 'evalator-context)
+(require 'evalator-elisp)
 
-(defvar evalator-state-default (list :context       evalator-context-elisp
+(defvar evalator-state-default (list :context       'evalator-elisp-context
                                      :mode          :normal
                                      :history       []
                                      :history-index -1))
@@ -41,20 +42,19 @@
 
 First, `evalator-state-default' is copied to `evalator-state'.
 Then, the state's `:mode' is set to MODE if MODE is non-nil.
-Then, the state's `context' is set to CONTEXT if CONTEXT is non-nil.
 Finally the function defined in the context's `:init' slot is called
 to perform any context specific initialization.
 "
+  (evalator-elisp-context) ;;Initialize elisp context if not already.
   (setq evalator-state (copy-sequence evalator-state-default))
-  (when context ;; might have a global or buffer local value
-    (evalator-utils-put! evalator-state :context context))
+  (evalator-utils-put! evalator-state :context (evalator-context-get context))
   (when mode
     (evalator-utils-put! evalator-state :mode mode))
   (funcall (slot-value (evalator-state-context) :init)))
 
 (defun evalator-state-context ()
   "Return the state's context object."
-  (plist-get evalator-state :context))
+  (funcall (plist-get evalator-state :context)))
 
 (provide 'evalator-state)
 
