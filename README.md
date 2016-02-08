@@ -14,18 +14,19 @@ What makes it different from a normal REPL?  With evalator you can:
 *  See the results of an expression as it is typed
 *  Transform data in a stepwise fashion
 *  Generate the equivalent code needed to produce your last result
-*  Interact with Emacs using a language other than ELisp
+*  Interact with Emacs using a language other than Elisp
 
 <sup>*</sup> Provided you've installed the appropriate extension package.
 
-By default, evalator uses ELisp as its evaluation language, but it
+### Language Support ###
+By default, evalator uses Elisp as its evaluation language, but it
 supports other languages through extension packages.  These packages
 define an evaluation context that can be passed to the ```evalator```
 command in order to set the evaluation language for that particular
 session.
 
-Currently available evaluation contexts:
-*  [Clojure](https://github.com/seanirby/evalator-clojure)(coming soon)
+#### Currently available evaluation contexts ####
+*  Clojure - via [evalator-clojure](https://github.com/seanirby/evalator-clojure)
 
 Don't see a context package for your favorite language?  Write one!
 See
