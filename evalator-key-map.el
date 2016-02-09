@@ -29,13 +29,12 @@
 
 (defvar evalator-key-map
   (let ((map (make-sparse-keymap)))
-    (set-keymap-parent map helm-map)
-    (define-key map (kbd "C-c C-e") 'evalator-action-execute-in-elisp)
-    (define-key map (kbd "C-c C-c") 'evalator-action-confirm-transform-collect)
     (define-key map (kbd "RET")     'evalator-action-confirm-make-or-transform)
+    (define-key map (kbd "C-c ;")   'evalator-action-insert-special-arg)
+    (define-key map (kbd "C-c C-c") 'evalator-action-confirm-transform-collect)
+    (define-key map (kbd "C-c C-e") 'evalator-action-execute-in-elisp)
     (define-key map (kbd "C-j")     'evalator-action-next)
     (define-key map (kbd "C-l")     'evalator-action-previous)
-    (define-key map (kbd "C-;")     'evalator-action-insert-special-arg)
     map))
 
 (provide 'evalator-key-map)
