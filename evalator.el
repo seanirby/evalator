@@ -48,7 +48,7 @@
 (put 'evalator-error 'error-conditions '(error))
 
 (defun evalator-action-previous ()
-  "Go to the next history state and update the evalator session."
+  "Go to the previous state and update the evalator session."
   (interactive)
   (when (not (equal 0 (evalator-history-index)))
     (evalator-utils-put! evalator-state :history-index (+ -1 (evalator-history-index)))
@@ -57,7 +57,7 @@
     (helm-update)))
 
 (defun evalator-action-next ()
-  "Go to the previous history state and update the evalator session."
+  "Go to the next history state and update the evalator session."
   (interactive)
   (when (not (equal (+ -1 (length (evalator-history))) (evalator-history-index)))
     (evalator-utils-put! evalator-state :history-index (+ 1 (evalator-history-index)))
