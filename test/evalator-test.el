@@ -123,9 +123,9 @@
 (ert-deftest evalator-marked-candidates-test ())
 
 (ert-deftest evalator-persistent-help-test ()
-  (let ((evalator-key-map (list 'evalator-action-previous           "C-l"
-                                'evalator-action-confirm            "RET"
-                                'evalator-action-insert-special-arg "C-c ;")))
+  (let ((evalator-key-map (list 'evalator-action-previous                  "C-l"
+                                'evalator-action-confirm-make-or-transform "RET"
+                                'evalator-action-insert-special-arg        "C-c ;")))
     (noflet ((where-is-internal (command key-map _) (plist-get key-map command))
              (key-description (str) str))
             (should (equal (concat "History forward, "
