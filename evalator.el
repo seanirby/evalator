@@ -204,6 +204,7 @@ accept's an optional ERR-HANDLER to pass to `evalator-try-context-f'."
     :candidates candidates
     :filtered-candidate-transformer (lambda (_c _s) (evalator-candidate-make-or-transform))
     :keymap evalator-key-map
+    :multiline t
     :nohighlight t
     :nomark (equal :explicit mode)
     :persistent-help (evalator-persistent-help)
