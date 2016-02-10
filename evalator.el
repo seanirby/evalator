@@ -149,7 +149,7 @@ used for when you need to produce an aggregate result."
                (key-description (where-is-internal command evalator-key-map t))))
     (concat "History forward, "
             (f 'evalator-action-previous) ": History backward, "
-            (f 'evalator-action-confirm) ": Accept transformation, "
+            (f 'evalator-action-confirm-make-or-transform) ": Accept transformation, "
             (f 'evalator-action-insert-special-arg) ": Insert special arg")))
 
 (defun evalator-get-candidates ()
