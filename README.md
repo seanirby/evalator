@@ -206,23 +206,27 @@ Or you could change the default special arg globally with the following:
 
 ### Public API ###
 
-Command                                                                                    | Description
--------------------------------------------------------------------------------------------|---------------------------
-<span style="white-space: nowrap;">```evalator```</span>                                   | Starts an evalator session 
-<span style="white-space: nowrap;">```evalator-explicit```</span>                          | Starts an evalator session in explicit mode
-<span style="white-space: nowrap;">```evalator-resume```</span>                            | Resumes last evalator session
-<span style="white-space: nowrap;">```evalator-insert-equiv-expr```</span>                 | Inserts the equivalent expression of the last evalator session into the current buffer. NOTE: The last session must have been run in explicit mode for this to work.
+The commands below can be bound to a shortcut or executed using ```M-x```
+
+```evalator``` - Starts an evalator session
+
+```evalator-explicit``` - Starts an evalator session in explicit mode
+
+```evalator-resume``` - Resumes last evalator session
+
+```evalator-insert-equiv-expr``` - Inserts the equivalent expression of the last evalator session into the current buffer. NOTE: The last session must have been run in explicit mode for this to work.
+
 
 ### Key Actions ###
-Below is a table of evalator specific key actions that can be used within the evalator session.  For helm specific commands such as candidate navigation and marking, refer to [helm's](https://github.com/emacs-helm/helm) documentation or run ```C-h m``` from within the evalator session.
+Below is a table of evalator specific key actions that can be used within the evalator session.  For helm specific commands such as candidate navigation and marking, refer to [helm's](https://github.com/emacs-helm/helm) documentation or run C-h m from within the evalator session.
 
-Action                                                                                          | Action shortcut      | Description
-------------------------------------------------------------------------------------------------|----------------------|-------------------------------
-<span style="white-space: nowrap;">```evalator-action-confirm-make-or-transform```</span>       | <kbd>RET</kbd>       | Accepts initial candidates or transformation then updates history.  If transforming candidates, the expression is evaluated on each candidate with the special arg referring to the candidate's value
-<span style="white-space: nowrap;">```evalator-action-insert-special-arg```</span>              | <kbd>C-c ;</kbd>       | Inserts the current evaluation context's special arg
-<span style="white-space: nowrap;">```evalator-action-confirm-transform-collection```</span>    | <kbd>C-c C-c</kbd>   | Accepts transformation and updates history. Expression is evaluated once awith the special arg referring to the selected candidates list
-<span style="white-space: nowrap;">```evalator-action-execute-in-elisp```</span>                | <kbd>C-c C-e</kbd>   | Executes the expression in Elisp on each selected candidate.  The history is not updated and the candidates are not transformed
-<span style="white-space: nowrap;">```evalator-action-next```</span>                            | <kbd>C-j</kbd>       | Goes to next history state
-<span style="white-space: nowrap;">```evalator-action-previous```</span>                        | <kbd>C-l</kbd>       | Goes to previous history state
+Shortcut                        | Command and Description
+------------------------------- | -----------------------
+<kbd>RET</kbd>                  | ``uevalator-action-confirm-make-or-transformu``</br></br>Accepts initial candidates or transformation then updates history.  If transforming candidates, the expression is evaluated on each candidate with the special arg referring to the candidate's value
+<kbd>C-c ;</kbd> <kbd>C-;</kbd> | ```evalator-action-insert-special-arg```</br></br>Insert's the current evaluation context's special arg.
+<kbd>C-c C-c</kbd>              | ```evalator-action-confirm-transform-collection```</br></br>Accepts transformation and updates history. Expression is evaluated once awith the special arg referring to the selected candidates list
+<kbd>C-c C-e</kbd>              | ```evalator-action-execute-in-elisp```</br></br>Executes the expression in Elisp on each selected candidate.  The history is not updated and the candidates are not transformed
+<kbd>C-j</kbd>                  | ```evalator-action-next```</br></br>Goes to next history state
+<kbd>C-l</kbd>                  | ```evalator-action-previous```</br></br>Goes to previous history state
 
 You can exit the evalator session by quitting the minibuffer.  This command is usually bound to <kbd>C-g</kbd>.
