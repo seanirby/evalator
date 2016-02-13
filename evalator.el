@@ -40,6 +40,137 @@
 (require 'evalator-utils)
 (require 'helm)
 
+(defvar evalator-help-message
+  "* Evalator Help
+
+Evalator is a new kind of REPL for Emacs.  It lets you interactively
+transform data and can support many different languages.
+
+Since the evalator documentation is in a state of flux currently, this
+help will only reference things that aren't likely to change.
+
+NOTE: This help also includes the help for helm, which evalator depends
+on as a front-end.  Knowing some basic helm commands is helpful to using
+evalator to its full potential.  The generic helm help is located directly
+under this help section.
+
+** Evalator Session Shortcuts
+
+The shortcuts in the table below are used while in the evalator buffer.
+
+ |----------+-------------------------------------------+------------------------------------------|
+ | Shortcut | Command                                   | Description                              |
+ |----------+-------------------------------------------+------------------------------------------|
+ |          |                                           |                                          |
+ | RETURN   | evalator-action-confirm-make-or-transform | Confirm the expression and either        |
+ |          |                                           | make the initial candidates or transform |
+ |          |                                           | the existing ones.                       |
+ |          |                                           |                                          |
+ |          |                                           | If this action is executed at the first  |
+ |          |                                           | evalator prompt then confirming will     |
+ |          |                                           | generate the initial candidates.         |
+ |          |                                           |                                          |
+ |          |                                           | Otherwise, confirmation evaluates the    |
+ |          |                                           | expression on each candidate.            |
+ |          |                                           |                                          |
+ |----------+-------------------------------------------+------------------------------------------|
+ |          |                                           |                                          |
+ | C-c ;    | evalator-action-insert-special-arg        | Insert the special arg character         |
+ |          |                                           |                                          |
+ | or       |                                           | See the \"Special Args\" section below   |
+ |          |                                           | for details on using special args.       |
+ | C-;      |                                           |                                          |
+ |          |                                           |                                          |
+ |----------+-------------------------------------------+------------------------------------------|
+ |          |                                           |                                          |
+ | C-c C-c  | evalator-action-confirm-transform-collect | This command causes the candidates to    |
+ |          |                                           | be treated as a single collection.       |
+ |          |                                           |                                          |
+ |          |                                           | This means that the special arg will     |
+ |          |                                           | refer to the entire collection of        |
+ |          |                                           | candidates.  The expression will only be |
+ |          |                                           | evaluated on this collection and only    |
+ |          |                                           | one candidate will be produced as a      |
+ |          |                                           | result.                                  |
+ |          |                                           |                                          |
+ |          |                                           | This command is useful for generating    |
+ |          |                                           | an aggregate result.                     |
+ |          |                                           |                                          |
+ |----------+-------------------------------------------+------------------------------------------|
+ |          |                                           |                                          |
+ | C-c C-e  | evalator-action-execute-in-elisp          | Execute the expression on each candidate |
+ |          |                                           | using Elisp.                             |
+ |          |                                           |                                          |
+ |          |                                           | NOTE: This action does not transform the |
+ |          |                                           | candidates                               |
+ |          |                                           |                                          |
+ |----------+-------------------------------------------+------------------------------------------|
+ |          |                                           |                                          |
+ | C-j      | evalator-action-next                      | Go to next history state                 |
+ |          |                                           |                                          |
+ |----------+-------------------------------------------+------------------------------------------|
+ |          |                                           |                                          |
+ | C-l      | evalator-action-previous                  | Go to previous history state             |
+ |          |                                           |                                          |
+ |----------+-------------------------------------------+------------------------------------------|
+
+** Global commands
+
+Below are the global evalator commands that can be run using M-x.
+
+You should probably bind them to shortcut.
+
+|----------------------------+-----------------------------------------------------------------------------------|
+| Command                    | Description                                                                       |
+|----------------------------+-----------------------------------------------------------------------------------|
+|                            |                                                                                   |
+| evalator                   | Starts an evalator session.                                                       |
+|                            |                                                                                   |
+|                            | Command accepts an optional mode and evaluation context as arguments.             |
+|                            |                                                                                   |
+|                            | If the mode arg is nil, then normal mode is used.                                 |
+|                            |                                                                                   |
+|                            | If the evaluation context arg is nil, then the felisp evaluation context is used. |
+|                            |                                                                                   |
+|----------------------------+-----------------------------------------------------------------------------------|
+|                            |                                                                                   |
+| evalator-explicit          | Starts an evalator session in explicit mode.                                      |
+|                            |                                                                                   |
+|                            | Accepts an optional evaluation context                                            |
+|                            |                                                                                   |
+|----------------------------+-----------------------------------------------------------------------------------|
+|                            |                                                                                   |
+| evalator-resume            | Resumes your last evalator session                                                |
+|                            |                                                                                   |
+|----------------------------+-----------------------------------------------------------------------------------|
+|                            |                                                                                   |
+| evalator-insert-equiv-expr | Inserts the equivalent expression of the last evalator session into the           |
+|                            | current buffer.                                                                   |
+|                            |                                                                                   |
+|                            | NOTE: The last session must have been run in explicit mode for this to work.      |
+|                            |                                                                                   |
+|----------------------------+-----------------------------------------------------------------------------------|
+
+** Special Args
+
+Special arguments are used to refer to the value of the candidate being
+transformed.  The default special character is Ⓔ which is the unicode
+character x24ba.  If a candidate was equal to the number 1 and your
+expression was (+ 1 Ⓔ) then 1 would be substituted for the special arg
+and the result would evaluate to 2.
+
+You can insert the special arg into the expression prompt by using the
+shortcut C-c ; which executes `evalator-action-insert-special-arg'.
+An abbreviated shortcut C-; has been provided for GUI Emacs users has
+
+If the candidate is a collection you can refer to an element within it
+by adding an integer after the special arg.  So if a candidate is the
+vector [1 2 3 4] and your expression is (+ 1 Ⓔ0) then Ⓔ0 would be
+substituted with 1 and the result would evaluate to 2.
+
+")
+
+(defvar evalator-expression-prompt "Enter Expression: ")
 (defvar evalator-candidates-initial '("Enter an expression below to generate initial data")
   "Informational candidate used on evalator startup.")
 
@@ -203,6 +334,7 @@ accept's an optional ERR-HANDLER to pass to `evalator-try-context-f'."
   (helm-build-sync-source (concat "Evaluation Result" (when (equal :explicit mode) "(Explicit)"))
     :candidates candidates
     :filtered-candidate-transformer (lambda (_c _s) (evalator-candidate-make-or-transform))
+    :help-message evalator-help-message
     :keymap evalator-key-map
     :multiline t
     :nohighlight t

@@ -126,6 +126,10 @@ Otherwise an elisp evaluation context is used.
 
 ### Basic Usage ###
 
+*Help is available anytime in an evalator session by running <kbd>C-h
+m</kbd>*.  This will open a buffer containg help for evalator followed
+by help for helm.
+
 Start evalator by typing ```M-x evalator```.  A helm buffer will be
 opened with a prompt to enter an expression.  Enter a valid expression
 to generate the initial "candidates".  A candidate is simply a result
@@ -199,7 +203,8 @@ its special arg:
 (setq evalator-elisp-special-arg "@")
 ```
 
-Or you could change the default special arg globally with the following:
+Or you could change the default special arg globally with the
+following:
 ```
 (setq evalator-context-special-arg-default "@") 
 ```
@@ -218,7 +223,12 @@ The commands below can be bound to a shortcut or executed using ```M-x```
 
 
 ### Key Actions ###
-Below is a table of evalator specific key actions that can be used within the evalator session.  For helm specific commands such as candidate navigation and marking, refer to [helm's](https://github.com/emacs-helm/helm) documentation or run C-h m from within the evalator session.
+Below is a table of evalator specific key actions that can be used
+within the evalator session.  For helm specific commands such as
+candidate navigation and marking, refer to
+[helm's](https://github.com/emacs-helm/helm) documentation or run
+<kbd>C-h m</kbd> to open a help buffer that contains evalator help
+followed by helm help.
 
 Shortcut                        | Command and Description
 ------------------------------- | -----------------------
